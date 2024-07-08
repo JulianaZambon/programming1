@@ -1,0 +1,4 @@
+1 -8/3 INVALIDO INVALIDO INVALIDO INVALIDO 
+1 -8/3 
+-8/3 1 
+a soma de todos os elementos eh: -5/3
