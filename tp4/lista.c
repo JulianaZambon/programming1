@@ -34,6 +34,19 @@ void lista_destroi(struct lista **lista)
 
 int lista_insere_inicio(struct lista *lista, int chave)
 {
+    struct nodo *novo;                                 // cria um novo nodo
+    novo = (struct nodo *)malloc(sizeof(struct nodo)); // aloca memoria para o novo nodo
+
+    // em caso de erro de alocação
+    if (novo == NULL)
+        return 0;
+
+    novo->chave = chave;     // novo nodo recebe a chave
+    novo->prox = lista->ini; // novo nodo aponta para o inicio da lista
+    lista->ini = novo;       // inicio da lista recebe o novo nodo
+    lista->tamanho++;        // incrementa o tamanho da lista
+
+    return 1;
 }
 
 int lista_insere_fim(struct lista *lista, int chave)
@@ -93,10 +106,8 @@ int lista_pertence(struct lista *lista, int chave)
 
 void lista_inicia_iterador(struct lista *lista)
 {
-    
 }
 
 int lista_incrementa_iterador(struct lista *lista, int *chave)
 {
-
 }
