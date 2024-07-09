@@ -1,0 +1,95 @@
+Teste 1: criar lista e ver se esta vazia:
+Esperado: tem que imprimir mensagem 'lista esta vazia'
+lista esta vazia
+
+Teste 2: tenta remover elemento com lista vazia:
+Esperado: nao pode ter dado segfault
+	OK: remover da lista vazia nao deu segfault.
+
+
+Teste 3: inserir 5 elementos no inicio:
+Esperado: tem que imprimir a lista 5 vezes, a cada vez com o maior elemento no inicio. 
+
+ATENCAO: se nao imprimir a lista corretamente o erro pode estar:
+- ou na insercao
+- ou na implementacao das funcoes que controlam o iterador
+- voce pode implementar TEMPORARIAMENTE uma funcao que imprime a lista acessando os nodos diretamente, ate encontrar o problema.
+11
+12 11
+13 12 11
+14 13 12 11
+15 14 13 12 11
+
+
+Teste 4: esvaziar a lista retirando do inicio:
+Esperado: tem que imprimir a lista 5 vezes, a cada vez sem o primeiro elemento
+          Ao final, mostrar a mensagem 'lista vazia'
+14 13 12 11
+13 12 11
+12 11
+11
+lista vazia
+
+
+Teste 5: inserir 5 elementos no fim:
+Esperado: tem que imprimir a lista 5 vezes, a cada vez com o maior elemento no fim
+11
+11 12
+11 12 13
+11 12 13 14
+11 12 13 14 15
+
+
+Teste 6: esvaziar a lista retirando do fim:
+Esperado: tem que imprimir a lista 5 vezes, a cada vez sem o maior elemento
+          Ao final, mostrar a mensagem 'lista vazia'
+11 12 13 14
+11 12 13
+11 12
+11
+lista vazia
+
+
+Teste 7: inserir 5 elementos em ordem:
+Esperado: tem que imprimir a lista 5 vezes, sempre ordenada
+Esperado: tem que mostrar remover de 11 ate 15
+13
+13 15
+11 13 15
+11 12 13 15
+11 12 13 14 15
+
+
+Teste 8: remover 5 elementos em ordem:
+Esperado: tem que imprimir a lista 5 vezes, sempre ordenada
+          Ao final, mostrar a mensagem 'lista vazia'
+11 12 14 15
+11 12 14
+12 14
+14
+lista vazia
+
+
+Teste 9: teste de pertinencia 
+Esperado: apos imprimir a lista, tem que mostrar que de 11 a 15 pertence
+          E que 10 e 16 nao pertencem
+14 12 11 15 13
+11 pertence
+12 pertence
+13 pertence
+14 pertence
+15 pertence
+10 nao pertence
+16 nao pertence
+
+
+Teste 10: destruir uma lista com elementos:
+Esperado: nao pode ter leak (conferir com valdrind)
+          E nao pode ter segfault
+
+
+Teste 11: destruir uma lista vazia:
+Esperado: nao pode ter leak (conferir com valdrind)
+          E nao pode ter segfault
+
+
