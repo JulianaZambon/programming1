@@ -248,7 +248,7 @@ int lista_pertence(struct lista *lista, int chave)
 */
 void lista_inicia_iterador(struct lista *lista)
 {
-    
+    lista->ptr = lista->ini; // ponteiro ptr recebe o inicio da lista
 }
 
 /*
@@ -258,4 +258,11 @@ void lista_inicia_iterador(struct lista *lista)
 */
 int lista_incrementa_iterador(struct lista *lista, int *chave)
 {
+    if (lista->ptr == NULL) // se o ponteiro ptr for NULL
+        return 0;
+
+    *chave = lista->ptr->chave; // chave recebe a chave do nodo
+    lista->ptr = lista->ptr->prox; // ponteiro ptr recebe o proximo nodo
+
+    return 1;
 }
