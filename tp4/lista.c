@@ -227,35 +227,11 @@ int lista_pertence(struct lista *lista, int chave)
         return 0;
 }
 
-/*
- * As funcoes abaixo implementam um iterador que vao permitir o usuario
- * de uma lista percorre-la, sem conhecer sua estrutura.
- *
- * Em conjunto, elas simulam um laço, sendo a inicializacao deste
- * a funcao lista_inicia_iterador e o incremento sendo a funcao
- * lista_incrementa_iterador.
- *
- * O ponteiro ptr da struct (iterador) eh inicializado apontando
- * para o primeiro elemento e incrementado ate' o ultimo elemento 
- * da lista.
- *
- * Ver exemplo de uso em testa_lista.c (funcao testa_imprimir_lista)
-*/
-
-/*
- * Inicializa ptr usado na funcao incrementa_iterador.
- * A funcao main deve garantir que a lista nao eh vazia.
-*/
 void lista_inicia_iterador(struct lista *lista)
 {
     lista->ptr = lista->ini; // ponteiro ptr recebe o inicio da lista
 }
 
-/*
- * Devolve no parametro *chave o elemento apontado e incrementa o iterador.
- * A funcao retorna 0 caso o iterador ultrapasse o ultimo elemento, ou retorna
- * 1 caso o iterador aponte para um elemento valido (dentro da lista).
-*/
 int lista_incrementa_iterador(struct lista *lista, int *chave)
 {
     if (lista->ptr == NULL) // se o ponteiro ptr for NULL
@@ -266,3 +242,4 @@ int lista_incrementa_iterador(struct lista *lista, int *chave)
 
     return 1;
 }
+
