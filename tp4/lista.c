@@ -1,280 +1,218 @@
-#include "lista.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "lista.h"
 
-/* Função para criar uma nova lista encadeada */
 struct lista *lista_cria()
 {
-    struct lista *lista = (struct lista *)malloc(sizeof(struct lista));
-    if (lista != NULL)
+    struct lista *nova_lista = (struct lista *)malloc(sizeof(struct lista));
+
+    if (nova_lista != NULL)
     {
-        lista->ini = NULL;
-        lista->ptr = NULL; /* Inicializa o iterador como NULL */
-        lista->tamanho = 0;
-    }
-    return lista;
-}
-
-/* Desaloca toda memoria da lista e faz lista receber NULL. */
-void lista_destroi(struct lista **lista)
-{
-    struct nodo *atual = (*lista)->ini;
-    while (atual != NULL)
-    {
-        struct nodo *aux = atual;
-        atual = atual->prox;
-        free(aux);
-    }
-    free(*lista);
-    *lista = NULL;
-}
-
-/*
- * Insere chave no inicio da lista. Retorna 1
- * em caso de sucesso e 0 em caso de falha.
- */
-int lista_insere_inicio(struct lista *lista, int chave)
-{
-    /* Aloca memória para o novo nodo */
-    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
-    if (novo == NULL)
-        return 0;
-
-    /* Caso base */
-    if (lista->ini == NULL) /* Lista vazia */
-    {
-        novo->chave = chave;
-        novo->prox = NULL;
-        lista->ini = novo;
-    }
-    else /* Lista não vazia */
-    {
-        novo->chave = chave;
-        novo->prox = lista->ini;
-        lista->ini = novo;
-    }
-
-    lista->tamanho++;
-    return 1;
-}
-
-/* Função para inserir um novo elemento no fim da lista */
-int lista_insere_fim(struct lista *lista, int chave)
-{
-    /* Aloca memória para o novo nodo */
-    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
-    if (novo == NULL)
-        return 0;
-
-    /* Preenche os campos do novo nodo */
-    novo->chave = chave;
-    novo->prox = NULL;
-
-    /* Caso base */
-    /* Se a lista estiver vazia, insere no início */
-    if (lista->ini == NULL)
-    {
-        lista->ini = novo;
-    }
-    else
-    {
-        /* Percorre a lista até o último nodo */
-        struct nodo *atual = lista->ini;
-        while (atual->prox != NULL)
+        nova_lista->ini = (struct nodo *)malloc(sizeof(struct nodo)); /* nodo cabeça */
+        if (nova_lista->ini != NULL)
         {
-            atual = atual->prox;
-        }
-        /* Adiciona o novo nodo ao final da lista */
-        atual->prox = novo;
-    }
-
-    lista->tamanho++;
-    return 1;
-}
-
-/* Função para inserir um novo elemento de forma ordenada na lista */
-int lista_insere_ordenado(struct lista *lista, int chave)
-{
-    /* Aloca memória para o novo nodo */
-    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
-    if (novo == NULL)
-        return 0;
-
-    /* Preenche os campos do novo nodo */
-    novo->chave = chave;
-    novo->prox = NULL;
-
-    /* Caso a lista esteja vazia */
-    if (lista->ini == NULL)
-    {
-        lista->ini = novo;
-    }
-    else
-    {
-        /* Caso o novo nodo deva ser o primeiro da lista */
-        if (chave < lista->ini->chave)
-        {
-            novo->prox = lista->ini;
-            lista->ini = novo;
+            nova_lista->ini->prox = NULL;      /* lista vazia */
+            nova_lista->ptr = nova_lista->ini; /* iterador no inicio da lista */
+            nova_lista->tamanho = 0;           /* lista vazia */
+            return nova_lista;
         }
         else
         {
-            /* Encontra o nodo anterior ao novo nodo */
-            struct nodo *prev = NULL;
-            struct nodo *atual = lista->ini;
-            while (atual != NULL && atual->chave < chave)
-            {
-                prev = atual;
-                atual = atual->prox;
-            }
-
-            /* Insere o novo nodo na lista */
-            prev->prox = novo;
-            novo->prox = atual;
+            free(nova_lista);
+            return NULL;
         }
     }
-
-    lista->tamanho++;
-    return 1;
+    return NULL;
 }
 
-/*
- * Remove o elemento do inicio da lista e o retorna
- * no parametro chave. Nao confundir com o retorno da funcao.
- * A funcao retorna 1 em caso de sucesso e 0 no caso da lista estar vazia.
- */
+void lista_destroi(struct lista **lista)
+{
+    if (lista != NULL && *lista != NULL)
+    {
+        struct nodo *atual = (*lista)->ini;
+        while (atual != NULL)
+        {
+            struct nodo *prox = atual->prox; /* guarda o proximo nodo */
+            free(atual);
+            atual = prox;
+        }
+        free(*lista);
+        *lista = NULL;
+    }
+}
+
+int lista_insere_inicio(struct lista *lista, int chave)
+{
+    if (lista == NULL || lista->ini == NULL)
+        return 0;
+
+    struct nodo *novo_nodo = (struct nodo *)malloc(sizeof(struct nodo));
+
+    if (novo_nodo != NULL)
+    {
+        novo_nodo->chave = chave;           /* insere a chave no novo nodo */
+        novo_nodo->prox = lista->ini->prox; /* aponta para o nodo que era o primeiro */
+        lista->ini->prox = novo_nodo;       /* aponta o inicio da lista para o novo nodo */
+        lista->tamanho++;
+        return 1;
+    }
+    return 0;
+}
+
+int lista_insere_fim(struct lista *lista, int chave)
+{
+    if (lista == NULL || lista->ini == NULL)
+        return 0;
+
+    struct nodo *novo_nodo = (struct nodo *)malloc(sizeof(struct nodo));
+    if (novo_nodo != NULL)
+    {
+        novo_nodo->chave = chave; /* insere a chave no novo nodo */
+        novo_nodo->prox = NULL;
+
+        struct nodo *atual = lista->ini;
+        while (atual->prox != NULL) /* percorre a lista */
+        {
+            atual = atual->prox;
+        }
+        atual->prox = novo_nodo;
+        lista->tamanho++;
+        return 1;
+    }
+    return 0;
+}
+
+int lista_insere_ordenado(struct lista *lista, int chave)
+{
+    if (lista == NULL || lista->ini == NULL)
+        return 0;
+
+    struct nodo *novo_nodo = (struct nodo *)malloc(sizeof(struct nodo));
+    if (novo_nodo != NULL)
+    {
+        novo_nodo->chave = chave;
+
+        struct nodo *anterior = lista->ini;
+        struct nodo *atual = lista->ini->prox;
+
+        while (atual != NULL && atual->chave < chave)
+        {
+            anterior = atual;
+            atual = atual->prox;
+        }
+
+        novo_nodo->prox = atual;
+        anterior->prox = novo_nodo;
+        lista->tamanho++;
+        return 1;
+    }
+    return 0;
+}
+
 int lista_remove_inicio(struct lista *lista, int *chave)
 {
-    if (lista->ini == NULL)
+    if (lista == NULL || lista->ini == NULL || lista->ini->prox == NULL)
         return 0;
 
-    /* Preenche o valor do elemento removido */
-    *chave = lista->ini->chave;
+    struct nodo *removido = lista->ini->prox;
+    *chave = removido->chave;
 
-    /* Remove o primeiro nodo da lista */
-    struct nodo *aux = lista->ini;
-    lista->ini = lista->ini->prox;
-    free(aux);
-
+    lista->ini->prox = removido->prox;
+    free(removido);
     lista->tamanho--;
-
     return 1;
 }
 
-/* Função para remover o último elemento da lista */
 int lista_remove_fim(struct lista *lista, int *chave)
 {
-    if (lista->ini == NULL)
+    if (lista == NULL || lista->ini == NULL || lista->ini->prox == NULL)
         return 0;
 
-    /* Caso a lista tenha apenas um elemento */
-    if (lista->ini->prox == NULL)
-    {
-        *chave = lista->ini->chave;
-        free(lista->ini);
-        lista->ini = NULL;
-        lista->tamanho--;
-        return 1;
-    }
+    struct nodo *anterior = lista->ini;
+    struct nodo *atual = lista->ini->prox;
 
-    /* Encontra o penúltimo nodo da lista */
-    struct nodo *prev = NULL;
-    struct nodo *atual = lista->ini;
     while (atual->prox != NULL)
     {
-        prev = atual;
+        anterior = atual;
         atual = atual->prox;
     }
 
-    /* Preenche o valor do elemento removido */
-    *chave = atual->chave;
-
-    /* Remove o último nodo da lista */
-    prev->prox = NULL;
+    *chave = atual->chave; /* retorna o valor do nodo removido */
+    anterior->prox = NULL;
     free(atual);
-
     lista->tamanho--;
-
     return 1;
 }
 
-/* Função para remover um elemento específico da lista */
 int lista_remove_ordenado(struct lista *lista, int chave)
 {
-    if (lista->ini == NULL)
+    if (lista == NULL || lista->ini == NULL || lista->ini->prox == NULL)
         return 0;
 
-    /* Caso o elemento a ser removido seja o primeiro da lista */
-    if (lista->ini->chave == chave)
+    struct nodo *anterior = lista->ini; 
+    struct nodo *atual = lista->ini->prox;
+
+    while (atual != NULL && atual->chave != chave) 
     {
-        struct nodo *aux = lista->ini;
-        lista->ini = lista->ini->prox;
-        free(aux);
+        anterior = atual; 
+        atual = atual->prox; 
+    }
+
+    if (atual != NULL)
+    {
+        anterior->prox = atual->prox;
+        free(atual);
         lista->tamanho--;
         return 1;
     }
-
-    /* Encontra o nodo anterior ao nodo a ser removido */
-    struct nodo *prev = NULL;
-    struct nodo *atual = lista->ini;
-    while (atual != NULL && atual->chave != chave)
-    {
-        prev = atual;
-        atual = atual->prox;
-    }
-
-    /* Caso o elemento não tenha sido encontrado */
-    if (atual == NULL)
-        return 0;
-
-    /* Remove o nodo da lista */
-    prev->prox = atual->prox;
-    free(atual);
-    lista->tamanho--;
-
-    return 1;
+    return 0;
 }
 
-/* Função que verifica se a lista está vazia */
 int lista_vazia(struct lista *lista)
 {
-    return lista->ini == NULL;
+    if (lista == NULL || lista->ini == NULL)
+        return 1;
+    return lista->ini->prox == NULL;
 }
 
-/* Função que retorna o tamanho atual da lista */
 int lista_tamanho(struct lista *lista)
 {
+    if (lista == NULL || lista->ini == NULL)
+        return 0;
     return lista->tamanho;
 }
 
-/* Função que verifica se um elemento pertence à lista */
 int lista_pertence(struct lista *lista, int chave)
 {
-    struct nodo *atual = lista->ini;
-    while (atual != NULL)
+    if (lista == NULL || lista->ini == NULL)
+        return 0;
+
+    struct nodo *atual = lista->ini->prox;
+    while (atual != NULL) /* percorre a lista */
     {
-        if (atual->chave == chave)
+        if (atual->chave == chave) /* chave encontrada */
             return 1;
         atual = atual->prox;
     }
     return 0;
 }
 
-/* Inicializa o iterador da lista */
 void lista_inicia_iterador(struct lista *lista)
 {
-    lista->ptr = lista->ini;
+    if (lista != NULL && lista->ini != NULL) /* lista não vazia */
+        lista->ptr = lista->ini->prox;
 }
 
-/* Incrementa o iterador da lista e retorna o valor atual */
 int lista_incrementa_iterador(struct lista *lista, int *chave)
 {
-    if (lista->ptr == NULL)
+    if (lista == NULL || lista->ini == NULL || lista->ptr == NULL) /* lista vazia ou iterador fora da lista */
         return 0;
 
-    *chave = lista->ptr->chave;    /* Retorna o valor atual */
-    lista->ptr = lista->ptr->prox; /* Incrementa o iterador */
+    *chave = lista->ptr->chave;    /* retorna o valor do nodo atual */
+    lista->ptr = lista->ptr->prox; /* avança o ponteiro para o próximo nodo */
 
-    return 1;
+    if (lista->ptr == NULL) /* fim da lista */
+        return 0;
+    else
+        return 1;
 }
-
