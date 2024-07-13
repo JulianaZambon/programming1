@@ -9,7 +9,7 @@ struct lista *lista_cria()
     if (lista != NULL)
     {
         lista->ini = NULL;
-        lista->ptr = NULL;
+        lista->ptr = NULL; /* Inicializa o iterador como NULL */
         lista->tamanho = 0;
     }
     return lista;
@@ -29,8 +29,37 @@ void lista_destroi(struct lista **lista)
     *lista = NULL;
 }
 
-/* Função para inserir um novo elemento no início da lista */
+/*
+ * Insere chave no inicio da lista. Retorna 1
+ * em caso de sucesso e 0 em caso de falha.
+ */
 int lista_insere_inicio(struct lista *lista, int chave)
+{
+    /* Aloca memória para o novo nodo */
+    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
+    if (novo == NULL)
+        return 0;
+
+    /* Caso base */
+    if (lista->ini == NULL) /* Lista vazia */
+    {
+        novo->chave = chave;
+        novo->prox = NULL;
+        lista->ini = novo;
+    }
+    else /* Lista não vazia */
+    {
+        novo->chave = chave;
+        novo->prox = lista->ini;
+        lista->ini = novo;
+    }
+
+    lista->tamanho++;
+    return 1;
+}
+
+/* Função para inserir um novo elemento no fim da lista */
+int lista_insere_fim(struct lista *lista, int chave)
 {
     /* Aloca memória para o novo nodo */
     struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
@@ -39,19 +68,32 @@ int lista_insere_inicio(struct lista *lista, int chave)
 
     /* Preenche os campos do novo nodo */
     novo->chave = chave;
-    novo->prox = lista->ini;
+    novo->prox = NULL;
 
-    /* Atualiza o início da lista */
-    lista->ini = novo;
+    /* Caso base */
+    /* Se a lista estiver vazia, insere no início */
+    if (lista->ini == NULL)
+    {
+        lista->ini = novo;
+    }
+    else
+    {
+        /* Percorre a lista até o último nodo */
+        struct nodo *atual = lista->ini;
+        while (atual->prox != NULL)
+        {
+            atual = atual->prox;
+        }
+        /* Adiciona o novo nodo ao final da lista */
+        atual->prox = novo;
+    }
 
-    /* Incrementa o tamanho da lista */
     lista->tamanho++;
-
     return 1;
 }
 
-/* Função para inserir um novo elemento no fim da lista */
-int lista_insere_fim(struct lista *lista, int chave)
+/* Função para inserir um novo elemento de forma ordenada na lista */
+int lista_insere_ordenado(struct lista *lista, int chave)
 {
     /* Aloca memória para o novo nodo */
     struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
@@ -69,66 +111,30 @@ int lista_insere_fim(struct lista *lista, int chave)
     }
     else
     {
-        /* Encontra o último nodo da lista */
-        struct nodo *atual = lista->ini;
-        while (atual->prox != NULL)
+        /* Caso o novo nodo deva ser o primeiro da lista */
+        if (chave < lista->ini->chave)
         {
-            atual = atual->prox;
-        }
-
-        /* Insere o novo nodo no final da lista */
-        atual->prox = novo;
-    }
-
-    /* Incrementa o tamanho da lista */
-    lista->tamanho++;
-
-    return 1;
-}
-
-/* Função para inserir um novo elemento de forma ordenada na lista */
-int lista_insere_ordenado(struct lista *lista, int chave)
-{
-    /* Aloca memória para o novo nodo */
-    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
-    if (novo == NULL)
-        return 0;
-
-    /* Preenche os campos do novo nodo */
-    novo->chave = chave;
-
-    /* Caso a lista esteja vazia ou o novo nodo seja menor que o primeiro */
-    if (lista->ini == NULL || chave < lista->ini->chave)
-    {
-        novo->prox = lista->ini;
-        lista->ini = novo;
-    }
-    else
-    {
-        /* Encontra o nodo anterior ao novo nodo */
-        struct nodo *prev = NULL;
-        struct nodo *atual = lista->ini;
-        while (atual != NULL && atual->chave < chave)
-        {
-            prev = atual;
-            atual = atual->prox;
-        }
-
-        /* Insere o novo nodo na lista */
-        if (prev != NULL)
-        {
-            prev->prox = novo;
+            novo->prox = lista->ini;
+            lista->ini = novo;
         }
         else
         {
-            lista->ini = novo;
+            /* Encontra o nodo anterior ao novo nodo */
+            struct nodo *prev = NULL;
+            struct nodo *atual = lista->ini;
+            while (atual != NULL && atual->chave < chave)
+            {
+                prev = atual;
+                atual = atual->prox;
+            }
+
+            /* Insere o novo nodo na lista */
+            prev->prox = novo;
+            novo->prox = atual;
         }
-        novo->prox = atual;
     }
 
-    /* Incrementa o tamanho da lista */
     lista->tamanho++;
-
     return 1;
 }
 
@@ -150,7 +156,6 @@ int lista_remove_inicio(struct lista *lista, int *chave)
     lista->ini = lista->ini->prox;
     free(aux);
 
-    /* Decrementa o tamanho da lista */
     lista->tamanho--;
 
     return 1;
@@ -168,27 +173,26 @@ int lista_remove_fim(struct lista *lista, int *chave)
         *chave = lista->ini->chave;
         free(lista->ini);
         lista->ini = NULL;
+        lista->tamanho--;
+        return 1;
     }
-    else
+
+    /* Encontra o penúltimo nodo da lista */
+    struct nodo *prev = NULL;
+    struct nodo *atual = lista->ini;
+    while (atual->prox != NULL)
     {
-        /* Encontra o penúltimo nodo da lista */
-        struct nodo *prev = NULL;
-        struct nodo *atual = lista->ini;
-        while (atual->prox != NULL)
-        {
-            prev = atual;
-            atual = atual->prox;
-        }
-
-        /* Preenche o valor do elemento removido */
-        *chave = atual->chave;
-
-        /* Remove o último nodo da lista */
-        prev->prox = NULL;
-        free(atual);
+        prev = atual;
+        atual = atual->prox;
     }
 
-    /* Decrementa o tamanho da lista */
+    /* Preenche o valor do elemento removido */
+    *chave = atual->chave;
+
+    /* Remove o último nodo da lista */
+    prev->prox = NULL;
+    free(atual);
+
     lista->tamanho--;
 
     return 1;
@@ -256,19 +260,21 @@ int lista_pertence(struct lista *lista, int chave)
     return 0;
 }
 
-
+/* Inicializa o iterador da lista */
 void lista_inicia_iterador(struct lista *lista)
 {
     lista->ptr = lista->ini;
 }
 
+/* Incrementa o iterador da lista e retorna o valor atual */
 int lista_incrementa_iterador(struct lista *lista, int *chave)
 {
     if (lista->ptr == NULL)
         return 0;
 
-    *chave = lista->ptr->chave;
-    lista->ptr = lista->ptr->prox;
+    *chave = lista->ptr->chave;    /* Retorna o valor atual */
+    lista->ptr = lista->ptr->prox; /* Incrementa o iterador */
 
     return 1;
 }
+
