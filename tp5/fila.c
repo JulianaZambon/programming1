@@ -5,7 +5,7 @@
 struct fila *fila_cria()
 {
     struct fila *f = (struct fila *)malloc(sizeof(struct fila));
-    if (f)
+    if (f != NULL)
     {
         f->ini = NULL;
         f->fim = NULL;
@@ -16,15 +16,15 @@ struct fila *fila_cria()
 
 void fila_destroi(struct fila **fila)
 {
-    struct nodo *p, *q;
-    if (*fila)
+    if (*fila != NULL)
     {
-        p = (*fila)->ini;
-        while (p) // libera todos os nodos
+        struct nodo *atual = (*fila)->ini;
+        struct nodo *prox;
+        while (atual != NULL)
         {
-            q = p;
-            p = p->prox;
-            free(q);
+            prox = atual->prox;
+            free(atual);
+            atual = prox;
         }
         free(*fila);
         *fila = NULL;
@@ -33,50 +33,69 @@ void fila_destroi(struct fila **fila)
 
 int enqueue(struct fila *fila, int dado)
 {
-    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
-
-    if (!novo)
+    if (fila == NULL)
+    {
         return 0;
+    }
 
-    novo->chave = dado;
-    novo->prox = NULL;
+    struct nodo *novo = (struct nodo *)malloc(sizeof(struct nodo));
+    if (novo == NULL)
+    {
+        return 0;
+    }
 
-    if (!fila->ini)
+    novo->chave = dado; /* insere o dado no novo nodo */
+    novo->prox = NULL;  /* o novo nodo será o ultimo da fila */
+
+    if (fila->ini == NULL)
+    {
         fila->ini = novo;
+    }
     else
+    {
         fila->fim->prox = novo;
+    }
 
     fila->fim = novo;
     fila->tamanho++;
+
     return 1;
 }
 
 int dequeue(struct fila *fila, int *dado)
 {
-    struct nodo *p;
-
-    if (!fila->ini)
+    if (fila == NULL || fila->ini == NULL)
+    {
         return 0;
+    }
 
-    *dado = fila->ini->chave;
-    p = fila->ini;
+    struct nodo *remover = fila->ini; /* nodo a ser removido */
+    *dado = remover->chave;           /* valor a ser retornado */
 
     fila->ini = fila->ini->prox;
-    free(p);
+    free(remover);
+
+    if (fila->ini == NULL)
+    {
+        fila->fim = NULL;
+    }
+
     fila->tamanho--;
 
-    if (!fila->ini)
-        fila->fim = NULL;
-        
     return 1;
 }
 
 int fila_tamanho(struct fila *fila)
 {
+    if (fila == NULL)
+    {
+        return 0;
+    }
     return fila->tamanho;
 }
 
 int fila_vazia(struct fila *fila)
 {
-    return !fila->ini;
+    return (fila == NULL || fila->ini == NULL);
 }
+
