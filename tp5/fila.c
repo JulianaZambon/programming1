@@ -99,3 +99,9 @@ int fila_vazia(struct fila *fila)
     return (fila == NULL || fila->ini == NULL);
 }
 
+
+int fila_vazia(struct fila *fila)
+{
+    return (fila == NULL || fila->ini == NULL);
+}
+
