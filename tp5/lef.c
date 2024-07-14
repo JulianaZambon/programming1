@@ -7,7 +7,7 @@ struct evento_t *cria_evento(int tempo, int tipo, int dado1, int dado2)
     struct evento_t *evento = (struct evento_t *)malloc(sizeof(struct evento_t));
     if (evento != NULL)
     {
-        evento->tempo = tempo;
+        evento->tempo = tempo; 
         evento->tipo = tipo;
         evento->dado1 = dado1;
         evento->dado2 = dado2;
@@ -101,7 +101,8 @@ int vazia_lef(struct lef_t *l)
 
 void imprime_lef(struct lef_t *l) {
     if (l == NULL || l->primeiro == NULL) {
-        printf("LEF vazia.\n");
+        printf("LEF: \n");
+        printf("  Total 0 eventos\n");
         return;
     }
 
@@ -110,11 +111,11 @@ void imprime_lef(struct lef_t *l) {
 
     printf("LEF: \n");
     while (atual != NULL) {
-        printf("    tempo %d tipo %d d1 %d d2 %d\n", atual->evento->tempo, atual->evento->tipo,
+        printf("  tempo %d tipo %d d1 %d d2 %d\n", atual->evento->tempo, atual->evento->tipo,
                atual->evento->dado1, atual->evento->dado2);
         total_eventos++;
         atual = atual->prox;
     }
 
-    printf("    Total %d eventos\n", total_eventos);
+    printf("  Total %d eventos\n", total_eventos);
 }
