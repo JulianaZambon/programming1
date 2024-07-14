@@ -99,10 +99,8 @@ int vazia_lef(struct lef_t *l)
     return (l == NULL || l->primeiro == NULL);
 }
 
-void imprime_lef(struct lef_t *l)
-{
-    if (l == NULL || l->primeiro == NULL)
-    {
+void imprime_lef(struct lef_t *l) {
+    if (l == NULL || l->primeiro == NULL) {
         printf("LEF vazia.\n");
         return;
     }
@@ -110,12 +108,13 @@ void imprime_lef(struct lef_t *l)
     struct nodo_lef_t *atual = l->primeiro;
     int total_eventos = 0;
 
-    while (atual != NULL)
-    {
-        printf("%d %d %d %d\n", atual->evento->tempo, atual->evento->tipo, atual->evento->dado1, atual->evento->dado2);
+    printf("LEF: \n");
+    while (atual != NULL) {
+        printf("    tempo %d tipo %d d1 %d d2 %d\n", atual->evento->tempo, atual->evento->tipo,
+               atual->evento->dado1, atual->evento->dado2);
         total_eventos++;
         atual = atual->prox;
     }
 
-    printf("total %d eventos\n", total_eventos);
+    printf("    Total %d eventos\n", total_eventos);
 }
