@@ -23,14 +23,16 @@ struct base
     int lotacao;                /* num de herois naquela base */
     struct conjunto *presentes; /* conjunto dos IDs dos herois presentes na base */
     struct fila *espera;        /* fila de herois esperando na base */
-    int local[2];               /* localizacao da base (par de coordenadas inteiras X, Y ≥ 0) */
+    int localX;               /* localizacao da base (par de coordenadas inteiras X, Y ≥ 0) */
+    int localY;
 };
 
 struct missao
 {
     int ID;                       /* num inteiro que identifica unicamente a missao */
     struct conjunto *habilidades; /* conjunto de habilidades necessarias para a missao */
-    int local[2];                 /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
+    int localX;                 /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
+    int localY;
 };
 
 /* definido pelas entidades acima*/
@@ -43,11 +45,13 @@ struct mundo
     int NMissoes;           /* num total de missoes a cumprir */
     struct missao *Missoes; /* vetor de missoes */
     int NHabilidades;       /* num total de habilidades distintas */
-    int TamanhoMundo[2];    /* tamanho do mundo (par de coordenadas inteiras X, Y ≥ 0) */
+    int TamanhoMundoX;    /* tamanho do mundo (par de coordenadas inteiras X, Y ≥ 0) */
+    int TamanhoMundoY;
     int Relogio;            /* tempo atual do mundo */
 };
 
 /* INICIALIZAÇÕES ----------------------------------------------------------- */
+
 
 int main()
 {
