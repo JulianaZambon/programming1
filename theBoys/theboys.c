@@ -5,8 +5,50 @@
 #include "lef.h"
 #include "fila.h"
 
-/* STRUCTS H, B, M, W ----------------------------------------------------------- */
+/* EVENTOS --------------------------------------------------------------------- */
+#define CHEGADA 0
+#define SAIDA 1
+#define MISSAO 2
+#define FIM_SIMULACAO 3
 
+/* MUNDO VIRTUAL --------------------------------------------------------------- */
+#define T_INICIO 0
+#define T_FIM_DO_MUNDO 525600
+#define N_TAMANHO_MUNDO 20000
+#define N_HABILIDADES 10
+#define N_HEROIS N_HABILIDADES * 5
+#define N_BASES N_HEROIS / 6
+#define N_MISSOES T_FIM_DO_MUNDO / 100
+
+/* HEROI ------------------------------------------------------------------------ */
+#define MIN_EXPERIENCIA 0
+#define MIN_PACIENCIA 0
+#define MAX_PACIENCIA 100
+#define MIN_VELOCIDADE 50
+#define MAX_VELOCIDADE 5000
+#define MIN_HABILIDADES 1
+#define MAX_HABILIDADES 3
+
+/* BASE ------------------------------------------------------------------------- */
+#define MIN_LOTACAO 3
+#define MAX_LOTACAO 10
+#define MIN_X 0
+#define MAX_X N_TAMANHO_MUNDO - 1
+#define MIN_Y 0
+#define MAX_Y N_TAMANHO_MUNDO - 1
+
+/* MISSAO ---------------------------------------------------------------------- */
+#define MIN_HABILIDADES_MISSAO 6
+#define MAX_HABILIDADES_MISSAO 10
+#define MIN_X_MISSAO 0
+#define MAX_X_MISSAO N_TAMANHO_MUNDO - 1
+#define MIN_Y_MISSAO 0
+#define MAX_Y_MISSAO N_TAMANHO_MUNDO - 1
+#define MIN_ID 0
+#define MAX_ID N_MISSOES - 1
+
+
+/* STRUCTS H, B, M, W ----------------------------------------------------------- */
 struct heroi
 {
     int ID;                       /* num inteiro que identifica unicamente o heroi */
@@ -23,7 +65,7 @@ struct base
     int lotacao;                /* num de herois naquela base */
     struct conjunto *presentes; /* conjunto dos IDs dos herois presentes na base */
     struct fila *espera;        /* fila de herois esperando na base */
-    int localX;               /* localizacao da base (par de coordenadas inteiras X, Y ≥ 0) */
+    int localX;                 /* localizacao da base (par de coordenadas inteiras X, Y ≥ 0) */
     int localY;
 };
 
@@ -31,7 +73,7 @@ struct missao
 {
     int ID;                       /* num inteiro que identifica unicamente a missao */
     struct conjunto *habilidades; /* conjunto de habilidades necessarias para a missao */
-    int localX;                 /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
+    int localX;                   /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
     int localY;
 };
 
@@ -45,13 +87,22 @@ struct mundo
     int NMissoes;           /* num total de missoes a cumprir */
     struct missao *Missoes; /* vetor de missoes */
     int NHabilidades;       /* num total de habilidades distintas */
-    int TamanhoMundoX;    /* tamanho do mundo (par de coordenadas inteiras X, Y ≥ 0) */
+    int TamanhoMundoX;      /* tamanho do mundo (par de coordenadas inteiras X, Y ≥ 0) */
     int TamanhoMundoY;
     int Relogio;            /* tempo atual do mundo */
 };
 
-/* INICIALIZAÇÕES ----------------------------------------------------------- */
+/* FUNÇÕES AUXILIARES ----------------------------------------------------------- */
 
+/* distancia entre dois pontos */
+int distancia(int x1, int y1, int x2, int y2)
+{
+    return abs(x1 - x2) + abs(y1 - y2);
+}
+
+/* FUNCOES DE INICIALIZACAO ----------------------------------------------------- */
+
+/* EVENTOS --------------------------------------------------------------------- */
 
 int main()
 {
@@ -63,3 +114,4 @@ int main()
 
     return 0;
 }
+
