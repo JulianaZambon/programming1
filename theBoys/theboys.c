@@ -216,7 +216,7 @@ struct mundo inicializa_mundo()
 
 void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    /* formato da saída */
+    /* Formato da saída */
     printf("%6d:CHEGA HEROI %2d Local %d (%2d/%2d), ",
            mundo->Relogio,
            IDHeroi,
@@ -224,23 +224,24 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
            cardinalidade_cjt(mundo->Bases[IDBase].presentes),
            mundo->Bases[IDBase].lotacao);
 
-    /* se a base não estiver cheia */
+    /* Se a base não estiver cheia */
     if (!base_cheia(&mundo->Bases[IDBase]))
     {
-        insere_cjt(mundo->Bases[IDBase].presentes, IDHeroi); /* insere herói na base */
-        printf("ENTRA\n");                                   /* formato da saída */
+        insere_cjt(mundo->Bases[IDBase].presentes, IDHeroi); /* Insere herói na base */
+        printf("ENTRA\n");                                   /* Formato da saída */
 
-        /* calcula o tempo de permanência na base */
-        int t_permanencia_local = max(1, mundo->Herois[IDHeroi].paciencia / 10 + aleat(-2, 6));
+        /* Calcula o tempo de permanência na base */
+        int paciencia = paciencia_heroi(&mundo->Herois[IDHeroi]);
+        int t_permanencia_base = 15 + paciencia * sorteia(1, 20);
 
-        /* cria um evento para a saída do herói da base */
+        /* Cria um evento para a saída do herói da base */
         struct evento_t *saida = malloc(sizeof(struct evento_t));
         if (!saida)
         {
             fprintf(stderr, "Erro ao alocar memória para evento de saída.\n");
             exit(EXIT_FAILURE);
         }
-        saida->tempo = mundo->Relogio + t_permanencia_local;
+        saida->tempo = mundo->Relogio + t_permanencia_base;
         saida->tipo = SAIDA;
         saida->dado1 = IDHeroi;
         saida->dado2 = IDBase;
@@ -248,19 +249,39 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
     }
     else
     {
-        /* verifica a paciência do herói */
+        /* Verifica a paciência do herói */
         if (paciencia_heroi(&mundo->Herois[IDHeroi]) > 0)
         {
-            insere_fila(mundo->Bases[IDBase].espera, IDHeroi);         /* insere herói na fila */
-            printf("FILA %d\n", mundo->Bases[IDBase].espera->tamanho); /* formato da saída */
+            /*Evento ESPERA
+            O herói H entra na fila de espera da base B. Assim que H entrar na fila, o porteiro da base B deve ser avisado para verificar a fila*/
+
+            insere_fila(mundo->Bases[IDBase].espera, IDHeroi);              /* Insere herói na fila */
+            printf("FILA %d\n", tamanho_fila(mundo->Bases[IDBase].espera)); /* Formato da saída */
         }
-        else /* heroi não teve paciencia */
+        else
         {
             printf("DESISTE\n"); /* Formato da saída */
+
+            /* Evento DESISTE
+            Cria um evento para o herói desistir e viajar para uma base aleatória */
+            
+            struct evento_t *saida = malloc(sizeof(struct evento_t));
+            if (!saida)
+            {
+                fprintf(stderr, "Erro ao alocar memória para evento de saída.\n");
+                exit(EXIT_FAILURE);
+            }
+            saida->tempo = mundo->Relogio;
+            saida->tipo = SAIDA;
+            saida->dado1 = IDHeroi;
+            saida->dado2 = IDBase;
+            adiciona_ordem_lef(lista_de_eventos, saida);
         }
     }
 }
 
+/*  O herói H sai da base B. Ao sair, escolhe uma base de destino para viajar;
+o porteiro de B é avisado, pois uma vaga foi liberada: */
 void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
     /* formato da saida */
@@ -285,6 +306,9 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
         }
     }
     printf("\n");
+
+    /*Evento VIAJA
+    O herói H se desloca para uma base D (que pode ser a mesma onde já está)*/
 
     int id_local_destino = aleat(0, mundo->NBases - 1);                                      /* sorteia uma base de destino */
     int t_deslocamento = distancia(mundo->Bases[IDBase].localX, mundo->Bases[IDBase].localY, /* calcula o tempo de deslocamento */
@@ -365,3 +389,4 @@ int main()
     free(mundo.Missoes);
     return 0;
 }
+
