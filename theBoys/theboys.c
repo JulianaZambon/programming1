@@ -115,13 +115,31 @@ int paciencia_heroi(struct heroi *h)
     return h->paciencia;
 }
 
+int velocidade_heroi(struct heroi h)
+{
+    return h.velocidade;
+}
+
 /* FUNÇÕES DE INCIALIZACAO ------------------------------------------------------ */
 
 struct heroi inicializa_heroi()
 {
     struct heroi h;
+    int i;
 
-    /* code here */
+    /* Inicializa o herói com ID e atributos aleatórios */
+    h.ID = rand();
+    h.habilidades = cria_cjt(MAX_HABILIDADES);
+    h.paciencia = sorteia(MIN_PACIENCIA, MAX_PACIENCIA);
+    h.velocidade = sorteia(MIN_VELOCIDADE, MAX_VELOCIDADE);
+    h.experiencia = MIN_EXPERIENCIA;
+    h.base = -1; /* Nenhuma base inicialmente */
+
+    int n_habilidades = sorteia(MIN_HABILIDADES, MAX_HABILIDADES);
+    for (i = 0; i < n_habilidades; i++)
+    {
+        insere_cjt(h.habilidades, sorteia(0, N_HABILIDADES - 1));
+    }
 
     return h;
 }
@@ -130,7 +148,13 @@ struct base inicializa_base()
 {
     struct base b;
 
-    /* code here */
+    /* Inicializa a base com ID e atributos aleatórios */
+    b.ID = rand();
+    b.lotacao = sorteia(MIN_LOTACAO, MAX_LOTACAO);
+    b.presentes = cria_cjt(b.lotacao);
+    b.espera = cria_fila();
+    b.localX = sorteia(MIN_X, MAX_X);
+    b.localY = sorteia(MIN_Y, MAX_Y);
 
     return b;
 }
@@ -166,49 +190,43 @@ struct mundo inicializa_mundo()
     m.TamanhoMundoX = m.TamanhoMundoY = N_TAMANHO_MUNDO;
     m.Relogio = T_INICIO;
 
-    /* inicializa herois */
-    for (int i = 0; i < m.NHerois; i++)
+    int i;
+    int j;
+
+     /* inicializa herois */
+    for (i = 0; i < m.NHerois; i++)
     {
         m.Herois[i] = inicializa_heroi();
     }
 
     /* inicializa bases */
-    for (int i = 0; i < m.NBases; i++)
+    for (i = 0; i < m.NBases; i++)
     {
         m.Bases[i] = inicializa_base();
     }
 
     /* inicializa missoes */
-    for (int i = 0; i < m.NMissoes; i++)
+    for (i = 0; i < m.NMissoes; i++)
     {
         m.Missoes[i].ID = i;
-        m.Missoes[i].habilidades = cria_conjunto();
+        m.Missoes[i].habilidades = cria_cjt(MAX_HABILIDADES_MISSAO);
         if (!m.Missoes[i].habilidades)
         {
-            fprintf(stderr, "Erro ao criar conjunto de habilidades para missao %d.\n", i);
+            fprintf(stderr, "Erro ao criar conjunto de habilidades para missao.\n");
             free(m.Herois);
             free(m.Bases);
             free(m.Missoes);
             return m;
         }
 
-        int n_habilidades = MIN_HABILIDADES_MISSAO + rand() % (MAX_HABILIDADES_MISSAO - MIN_HABILIDADES_MISSAO + 1);
-        for (int j = 0; j < n_habilidades; j++)
-        {
-            int habilidade = rand() % m.NHabilidades;
-            if (!insere_cjt(m.Missoes[i].habilidades, habilidade))
-            {
-                fprintf(stderr, "Erro ao inserir habilidade %d na missao %d.\n", habilidade, i);
-                destroi_conjunto(m.Missoes[i].habilidades);
-                free(m.Herois);
-                free(m.Bases);
-                free(m.Missoes);
-                return m;
-            }
-        }
+        m.Missoes[i].localX = sorteia(MIN_X_MISSAO, MAX_X_MISSAO);
+        m.Missoes[i].localY = sorteia(MIN_Y_MISSAO, MAX_Y_MISSAO);
 
-        m.Missoes[i].localX = MIN_X_MISSAO + rand() % (MAX_X_MISSAO - MIN_X_MISSAO + 1);
-        m.Missoes[i].localY = MIN_Y_MISSAO + rand() % (MAX_Y_MISSAO - MIN_Y_MISSAO + 1);
+        int n_habilidades_missao = sorteia(MIN_HABILIDADES_MISSAO, MAX_HABILIDADES_MISSAO);
+        for (j = 0; j < n_habilidades_missao; j++)
+        {
+            insere_cjt(m.Missoes[i].habilidades, sorteia(0, N_HABILIDADES - 1));
+        }
     }
 
     return m;
@@ -369,9 +387,10 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
         printf("HER_EQS %d:", local_encontrado.ID);
         imprime_cjt(local_encontrado.presentes);
 
-        int id_heroi_encontrado; 
+        int id_heroi_encontrado;
         inicia_iterador_cjt(local_encontrado.presentes);
-        for (int i = 0; i < cardinalidade_cjt(local_encontrado.presentes); i++) /* incrementa a experiencia dos herois */
+        int i;
+        for (i = 0; i < cardinalidade_cjt(local_encontrado.presentes); i++) /* incrementa a experiencia dos herois */
         {
             incrementa_iterador_cjt(local_encontrado.presentes, &id_heroi_encontrado);
             (mundo->Herois[id_heroi_encontrado].experiencia)++;
@@ -386,20 +405,21 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     printf("%6d:FIM\n", mundo->Relogio);
 
     /* libera os recursos dos heróis */
-    for (int i = 0; i < mundo->NHerois; i++)
+    int i;
+    for (i = 0; i < mundo->NHerois; i++)
     {
         destroi_conjunto(mundo->Herois[i].habilidades);
     }
 
     /* libera os recursos das bases */
-    for (int i = 0; i < mundo->NBases; i++)
+    for (i = 0; i < mundo->NBases; i++)
     {
         destroi_conjunto(mundo->Bases[i].presentes);
         destroi_fila(mundo->Bases[i].espera);
     }
 
     /* libera os recursos das missões */
-    for (int i = 0; i < mundo->NMissoes; i++)
+    for (i = 0; i < mundo->NMissoes; i++)
     {
         destroi_conjunto(mundo->Missoes[i].habilidades);
     }
