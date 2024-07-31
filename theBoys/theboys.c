@@ -120,7 +120,6 @@ int aleat(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-/* escolhe a menor equipe para a missão */
 struct missao *escolhe_menor_equipe(struct conjunto *habilidades_missao, struct mundo *mundo, struct base *local_encontrado)
 {
     int i, j;
@@ -388,7 +387,7 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
                          velocidade_heroi(mundo->Herois[IDHeroi]);
 
     struct evento_t chegada_heroi = {mundo->Relogio + t_deslocamento / 15, CHEGADA, IDHeroi, id_local_destino}; /* cria evento de chegada do heroi */
-    insere_lef(lista_de_eventos, &chegada_heroi);                                                       /* adiciona evento na lista de eventos */
+    insere_lef(lista_de_eventos, &chegada_heroi);                                                               /* adiciona evento na lista de eventos */
 }
 
 /* Uma missão M é disparada no instante T. São características de uma missão:
@@ -428,7 +427,7 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
         nova_tentativa->tipo = MISSAO;                                       /* define o tipo do evento */
         nova_tentativa->dado1 = IDMissao;                                    /* define o ID da missão */
         nova_tentativa->dado2 = 0;                                           /* define o ID da base */
-        insere_lef(lista_de_eventos, nova_tentativa);                /* adiciona o evento na lista de eventos */
+        insere_lef(lista_de_eventos, nova_tentativa);                        /* adiciona o evento na lista de eventos */
     }
     else /* se a equipe escolhida não for vazia */
     {
@@ -448,21 +447,48 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     free(equipe_escolhida);
 }
 
-void evento_fim(struct mundo *mundo)
+void evento_fim(struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int i;
-    for (i = 0; i < mundo->NHerois; i++) {
+    int i; 
+    for (i = 0; i < mundo->NHerois; i++)
+    {
         destroi_cjt(mundo->Herois[i].habilidades);
+        free(mundo->Herois[i].habilidades);
     }
-    for (i = 0; i < mundo->NBases; i++) {
-        fila_destroi(&mundo->Bases[i].espera);
-    }
-
     free(mundo->Herois);
-    free(mundo->Bases);
-    free(mundo->Missoes);
-}
 
+    for (i = 0; i < mundo->NBases; i++)
+    {
+        free(mundo->Bases[i].presentes);
+    }
+    free(mundo->Bases);
+
+    for (i = 0; i < mundo->NMissoes; i++)
+    {
+        free(mundo->Missoes[i].habilidades);
+    }
+    free(mundo->Missoes);
+
+    /* Liberar memória de outras estruturas alocadas dinamicamente*/
+    mundo->Herois = NULL;
+    mundo->Bases = NULL;
+    mundo->Missoes = NULL;
+
+    mundo->NHerois = 0;
+    mundo->NBases = 0;
+    mundo->NMissoes = 0;
+    mundo->NHabilidades = 0;
+    mundo->TamanhoMundoX = 0;
+    mundo->TamanhoMundoY = 0;
+    mundo->Relogio = 0;
+
+    /* Cria evento de fim do mundo */
+    struct evento_t *fim = cria_evento(T_FIM_DO_MUNDO, FIM_SIMULACAO, 0, 0);
+    if (fim)
+    {
+        insere_lef(lista_de_eventos, fim);
+    }
+}
 
 /* MAIN ------------------------------------------------------------------------ */
 int main()
@@ -508,7 +534,7 @@ int main()
             evento_missao(evento->dado1, &mundo, lista_de_eventos);
             break;
         case FIM_SIMULACAO:
-            evento_fim(&mundo);
+            evento_fim(&mundo, lista_de_eventos);
             break;
         default:
             fprintf(stderr, "Evento desconhecido.\n");
