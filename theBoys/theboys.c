@@ -112,6 +112,7 @@ int base_cheia(struct base *b)
 
 int paciencia_heroi(struct heroi *h)
 {
+    return h->paciencia;
 }
 
 /* FUNÇÕES DE INCIALIZACAO ------------------------------------------------------ */
