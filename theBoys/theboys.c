@@ -104,6 +104,7 @@ int sorteia(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
+/* verifica se a base está lotada */
 int base_cheia(struct base *b)
 {
     return b->lotacao == b->espera->tamanho;
@@ -213,10 +214,13 @@ struct mundo inicializa_mundo()
 }
 
 /* EVENTOS ---------------------------------------------------------------------- */
+/* Os eventos implementam as mudanças de estado que fazem evoluir a simulação.
+Cada evento tem um instante de ocorrência, pode consultar e alterar variáveis
+(atributos das entidades) e pode criar outros eventos no presente ou no futuro.
+*/
 
 void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    /* Formato da saída */
     printf("%6d:CHEGA HEROI %2d Local %d (%2d/%2d), ",
            mundo->Relogio,
            IDHeroi,
@@ -260,11 +264,11 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
         }
         else
         {
-            printf("DESISTE\n"); /* Formato da saída */
+            printf("DESISTE\n");
 
             /* Evento DESISTE
             Cria um evento para o herói desistir e viajar para uma base aleatória */
-            
+
             struct evento_t *saida = malloc(sizeof(struct evento_t));
             if (!saida)
             {
@@ -320,12 +324,90 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     adiciona_ordem_lef(lista_de_eventos, &chegada_heroi);                                                       /* adiciona evento na lista de eventos */
 }
 
+/* Uma missão M é disparada no instante T. São características de uma missão:
+    Cada missão ocorre em um local aleatório e requer um conjunto aleatório de habilidades; ambos são definidos durante a inicialização.
+    Cada equipe é formada pelo conjunto de heróis presentes em uma base.
+    Uma equipe está apta para a missão se a união das habilidades de seus heróis contém as habilidades requeridas pela missão.
+    Deve ser escolhida para a missão a equipe da base mais próxima ao local da missão e que esteja apta para ela.
+    Ao completar uma missão, os heróis da equipe escolhida ganham pontos de experiência.
+    Se uma missão não puder ser completada, ela é marcada como “impossível” e adiada de 24 horas.
+*/
 void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
+    struct conjunto *missao;
+    if (!(missao = cria_subcjt_cjt(mundo->Missoes[IDMissao].habilidades, aleat(MIN_HABILIDADES_MISSAO, MAX_HABILIDADES_MISSAO))))
+    {
+        fprintf(stderr, "Erro de memória ao criar sub-conjunto para a missão.\n");
+        return;
+    }
+
+    printf("%6d:MISSAO %3d HAB_REQ ", mundo->Relogio, IDMissao);
+    imprime_cjt(missao);
+
+    struct base local_encontrado;
+    struct missao *equipe_escolhida = escolhe_menor_equipe(missao, IDMissao, mundo, &local_encontrado);
+
+    printf("%6d:MISSAO %3d ", mundo->Relogio, IDMissao);
+    if (vazio_cjt(equipe_escolhida)) /* se a equipe escolhida for vazia */
+    {
+        printf("IMPOSSIVEL\n");
+        struct evento_t *nova_tentativa = malloc(sizeof(struct evento_t)); /* cria um novo evento de missão */
+        if (!nova_tentativa)
+        {
+            fprintf(stderr, "Erro ao alocar memória para novo evento de missão.\n");
+            exit(EXIT_FAILURE);
+        }
+        nova_tentativa->tempo = aleat(mundo->Relogio, mundo->TamanhoMundoY); /* adia a missão por 24 horas */
+        nova_tentativa->tipo = MISSAO;                                       /* define o tipo do evento */
+        nova_tentativa->dado1 = IDMissao;                                    /* define o ID da missão */
+        nova_tentativa->dado2 = 0;                                           /* define o ID da base */
+        adiciona_ordem_lef(lista_de_eventos, nova_tentativa);                /* adiciona o evento na lista de eventos */
+    }
+    else /* se a equipe escolhida não for vazia */
+    {
+        printf("HER_EQS %d:", local_encontrado.ID);
+        imprime_cjt(local_encontrado.presentes);
+
+        int id_heroi_encontrado; 
+        inicia_iterador_cjt(local_encontrado.presentes);
+        for (int i = 0; i < cardinalidade_cjt(local_encontrado.presentes); i++) /* incrementa a experiencia dos herois */
+        {
+            incrementa_iterador_cjt(local_encontrado.presentes, &id_heroi_encontrado);
+            (mundo->Herois[id_heroi_encontrado].experiencia)++;
+        }
+    }
+    missao = destroi_cjt(missao);
+    equipe_escolhida = destroi_cjt(equipe_escolhida);
 }
 
 void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 {
+    printf("%6d:FIM\n", mundo->Relogio);
+
+    /* libera os recursos dos heróis */
+    for (int i = 0; i < mundo->NHerois; i++)
+    {
+        destroi_conjunto(mundo->Herois[i].habilidades);
+    }
+
+    /* libera os recursos das bases */
+    for (int i = 0; i < mundo->NBases; i++)
+    {
+        destroi_conjunto(mundo->Bases[i].presentes);
+        destroi_fila(mundo->Bases[i].espera);
+    }
+
+    /* libera os recursos das missões */
+    for (int i = 0; i < mundo->NMissoes; i++)
+    {
+        destroi_conjunto(mundo->Missoes[i].habilidades);
+    }
+
+    /* libera os recursos do mundo */
+    free(mundo->Herois);
+    free(mundo->Bases);
+    free(mundo->Missoes);
+    free(mundo);
 }
 
 /* MAIN ------------------------------------------------------------------------ */
@@ -389,4 +471,3 @@ int main()
     free(mundo.Missoes);
     return 0;
 }
-
