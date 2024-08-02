@@ -250,7 +250,7 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 
     if (base_lotada(IDBase, mundo))
     {
-        if (paciencia_do_heroi(IDHeroi, mundo) > 50)
+        if (paciencia_do_heroi() > 50)
         {
             enqueue(mundo->bases[IDBase].espera, IDHeroi);
             printf("FILA %d\n", fila_tamanho(mundo->bases[IDBase].espera));
@@ -295,7 +295,7 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     int destino = aleat(0, mundo->n_bases - 1);
     int tempo_viagem = distancia(mundo->bases[IDBase].localX, mundo->bases[IDBase].localY,
                                  mundo->bases[destino].localX, mundo->bases[destino].localY) /
-                       velocidade_heroi(&mundo->herois[IDHeroi]);
+                       velocidade_heroi();
     struct evento_t chegada = {mundo->tempo_atual + tempo_viagem, CHEGADA, IDHeroi, destino};
     insere_lef(lista_de_eventos, &chegada);
 }
@@ -401,7 +401,7 @@ int main()
             break;
 
         case FIM:
-            printf("%6d:FIM\n", mundo->tempo_atual);
+            evento_fim(mundo, &lista_de_eventos);
             break;
         }
 
@@ -410,3 +410,4 @@ int main()
 
     return 0;
 }
+
