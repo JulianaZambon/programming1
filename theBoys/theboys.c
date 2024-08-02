@@ -389,14 +389,10 @@ int main()
     struct evento_t *evento_atual;
 
     /* ciclo da simulação */
-    while (lista_de_eventos && (evento_atual = retira_lef(lista_de_eventos)))
+    while (lista_de_eventos && (evento_atual = retira_lef(lista_de_eventos)))  /* enquanto houver eventos */
     {
-        mundo->tempo_atual = evento_atual->tempo;
+        mundo->tempo_atual = evento_atual->tempo;   /* atualiza o tempo do mundo */
 
-        if (!(evento_atual))
-            exit(EXIT_FAILURE);
-
-        mundo->tempo_atual = evento_atual->tempo;
         switch (evento_atual->tipo)
         {
 
@@ -420,3 +416,4 @@ int main()
     destroi_lef(lista_de_eventos);
     return 0;
 }
+
