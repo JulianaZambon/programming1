@@ -57,7 +57,7 @@ struct mundo
     struct conjunto *cj_habilidades; /* num total de habilidades distintas */
     int tamanho_do_mundo;
     int fim_do_mundo;
-    int tempo_atual; /* tempo atual do mundo */
+    int tempo_atual;                   /* tempo atual do mundo */
 };
 
 /* FUNÇÕES AUXILIARES ----------------------------------------------------------- */
@@ -166,7 +166,7 @@ struct base inicializa_base(int ID, int tamanho_do_mundo)
     struct base b;
 
     b.ID_base = ID;
-    b.lotacao = aleat(5, 30);
+    b.lotacao = aleat(3, 10); /* número aleatório [3...10] */
 
     if (!(b.presentes = cria_cjt(b.lotacao)))
         exit(EXIT_FAILURE);
