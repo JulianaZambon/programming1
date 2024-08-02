@@ -155,7 +155,7 @@ struct heroi inicializa_heroi(int ID, struct conjunto *habilidades)
     h.paciencia = aleat(0, 100);
     h.experiencia = 0;
 
-    if (!(h.habilidades_heroi = cria_subcjt_cjt(habilidades, aleat(2, 5))))
+    if (!(h.habilidades_heroi = cria_subcjt_cjt(habilidades, aleat(1, 3)))) /* conjunto com tamanho aleatório [1...3] de habilidades aleatórias */
         exit(EXIT_FAILURE);
 
     return h;
