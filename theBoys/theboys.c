@@ -44,13 +44,13 @@ struct missao
 /* definido pelas entidades acima*/
 struct mundo
 {
-    int n_herois;           /* num total de herois no mundo*/
-    struct heroi *herois;   /* vetor de herois */
-    int n_bases;            /* num total de bases no mundo */
-    struct base *bases;     /* vetor de bases */
-    int n_missoes;          /* num total de missoes a cumprir */
-    struct missao *Missoes; /* vetor de missoes */
-    struct conjunto *cj_habilidades;    /* num total de habilidades distintas */
+    int n_herois;                    /* num total de herois no mundo*/
+    struct heroi *herois;            /* vetor de herois */
+    int n_bases;                     /* num total de bases no mundo */
+    struct base *bases;              /* vetor de bases */
+    int n_missoes;                   /* num total de missoes a cumprir */
+    struct missao *Missoes;          /* vetor de missoes */
+    struct conjunto *cj_habilidades; /* num total de habilidades distintas */
     int tamanho_do_mundo;
     int fim_do_mundo;
     int tempo_atual; /* tempo atual do mundo */
@@ -82,7 +82,7 @@ int base_lotada(int ID_base, struct mundo *mundo)
 
 int paciencia_do_heroi()
 {
-    return aleat(0,100);
+    return aleat(0, 100);
 }
 
 int velocidade_heroi()
@@ -95,7 +95,6 @@ struct conjunto *escolhe_menor_equipe(struct conjunto missao, int ID_missao, str
     struct conjunto *menor;
     if (!(menor = cria_cjt(cardinalidade_cjt(mundo->cj_habilidades))))
         return NULL;
-    
 
     struct conjunto *antiga_uniao;
     struct conjunto *uniao;
@@ -181,8 +180,9 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
 {
     struct mundo *mundo;
     mundo = malloc(sizeof(struct mundo));
-    
-    if (!mundo) {
+
+    if (!mundo)
+    {
         exit(EXIT_FAILURE);
     }
 
@@ -192,12 +192,14 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
     mundo->n_missoes = mundo->fim_do_mundo / 100;
 
     const int habilidades = 10;
-    if (!(mundo->cj_habilidades = cria_cjt(habilidades))) {
+    if (!(mundo->cj_habilidades = cria_cjt(habilidades)))
+    {
         exit(EXIT_FAILURE);
     }
 
     int i;
-    for (i = 0; i < habilidades; i++) {
+    for (i = 0; i < habilidades; i++)
+    {
         insere_cjt(mundo->cj_habilidades, i);
     }
 
@@ -205,36 +207,40 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
     mundo->n_bases = mundo->n_herois / 6;
 
     /* cria um vetor de heróis e preenche ele */
-    if (!(mundo->herois = malloc(mundo->n_herois * sizeof(struct heroi)))) {
+    if (!(mundo->herois = malloc(mundo->n_herois * sizeof(struct heroi))))
+    {
         exit(EXIT_FAILURE);
     }
 
-    for (i = 0; i < mundo->n_herois; i++) {
+    for (i = 0; i < mundo->n_herois; i++)
+    {
         mundo->herois[i] = inicializa_heroi(i, mundo->cj_habilidades);
     }
 
     /* cria vetor de bases e preenche ele */
-    if (!(mundo->bases = malloc(mundo->n_bases * sizeof(struct base)))) {
+    if (!(mundo->bases = malloc(mundo->n_bases * sizeof(struct base))))
+    {
         exit(EXIT_FAILURE);
     }
 
-    for (i = 0; i < mundo->n_bases; i++) {
+    for (i = 0; i < mundo->n_bases; i++)
+    {
         mundo->bases[i] = inicializa_base(i, mundo->tamanho_do_mundo);
     }
 
     /* para cada heroi, cria um evento e insere na lef */
-    for (i = 0; i < mundo->n_herois; i++) {
+    for (i = 0; i < mundo->n_herois; i++)
+    {
         struct evento_t *chegada_heroi = cria_evento(aleat(0, mundo->fim_do_mundo), CHEGADA, i, aleat(0, mundo->n_bases - 1));
         insere_lef(lista_de_eventos, chegada_heroi);
     }
 
-    /* cria um evento de fim e insere na lef tbm */
-    struct evento_t *fim = cria_evento(mundo->fim_do_mundo, FIM, 0, 0);
-    insere_lef(lista_de_eventos, fim);
+    /* cria um evento de fim e insere na lef*/
+    struct evento_t fim = {mundo->fim_do_mundo, FIM, 0, 0};
+    insere_lef(lista_de_eventos, &fim);
 
     return mundo;
 }
-
 
 /* EVENTOS ---------------------------------------------------------------------- */
 /* Os eventos implementam as mudanças de estado que fazem evoluir a simulação.
@@ -324,10 +330,10 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     if (vazio_cjt(equipe_escolhida))
     {
         printf("IMPOSSIVEL\n");
-        struct evento_t nova_tentativa = {aleat(mundo->tempo_atual, mundo->fim_do_mundo), MISSAO, IDMissao, 0 };
+        struct evento_t nova_tentativa = {aleat(mundo->tempo_atual, mundo->fim_do_mundo), MISSAO, IDMissao, 0};
         insere_lef(lista_de_eventos, &nova_tentativa);
     }
-    else 
+    else
     {
         printf("HER_EQS %d:", base_encontrada.ID_base);
         imprime_cjt(base_encontrada.presentes);
@@ -339,7 +345,7 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
         {
             incrementa_iterador_cjt(base_encontrada.presentes, &ID_heroi_encontrado);
             mundo->herois[ID_heroi_encontrado].experiencia++;
-        } 
+        }
     }
     missao = destroi_cjt(missao);
     equipe_escolhida = destroi_cjt(equipe_escolhida);
@@ -364,7 +370,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 
     free(mundo->herois);
     free(mundo->bases);
-    destroi_cjt(mundo->cj_habilidades);
+    mundo->cj_habilidades = destroi_cjt(mundo->cj_habilidades);
     free(mundo);
     *lista_de_eventos = destroi_lef(*lista_de_eventos);
 }
@@ -381,13 +387,19 @@ int main()
     struct mundo *mundo = inicializa_mundo(lista_de_eventos);
 
     struct evento_t *evento_atual;
-    /* ciclo da simulação do the boys*/
+
+    /* ciclo da simulação */
     while (lista_de_eventos && (evento_atual = retira_lef(lista_de_eventos)))
     {
         mundo->tempo_atual = evento_atual->tempo;
 
+        if (!(evento_atual))
+            exit(EXIT_FAILURE);
+
+        mundo->tempo_atual = evento_atual->tempo;
         switch (evento_atual->tipo)
         {
+
         case CHEGADA:
             evento_chegada(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
             break;
@@ -404,10 +416,7 @@ int main()
             evento_fim(mundo, &lista_de_eventos);
             break;
         }
-
-        free(evento_atual);
     }
-
+    destroi_lef(lista_de_eventos);
     return 0;
 }
-
