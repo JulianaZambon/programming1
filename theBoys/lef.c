@@ -119,20 +119,3 @@ void imprime_lef(struct lef_t *l) {
 
     printf("  Total %d eventos\n", total_eventos);
 }
-
-struct evento_t *obtem_primeiro_lef (struct lef_t *l) {
-    
-    if (l == NULL || l->primeiro == NULL) {
-        return NULL; 
-    }
-    
-    struct nodo_lef_t *aux = l->primeiro;
-
-    struct evento_t *evento = l->primeiro->evento;
-
-    l->primeiro = l->primeiro->prox;
-
-    free(aux);
-
-    return evento;
-}
