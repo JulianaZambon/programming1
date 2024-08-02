@@ -153,6 +153,7 @@ struct heroi inicializa_heroi(int ID, struct conjunto *habilidades)
     h.ID = ID;
     h.paciencia = aleat(0, 100);
     h.experiencia = 0;
+    h.velocidade = velocidade_heroi();
 
     if (!(h.habilidades_heroi = cria_subcjt_cjt(habilidades, aleat(1, 3)))) /* conjunto com tamanho aleatório [1...3] de habilidades aleatórias */
         exit(EXIT_FAILURE);
@@ -183,7 +184,10 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
 {
     struct mundo *mundo = malloc(sizeof(struct mundo));
     if (!mundo)
+    {
+        fprintf(stderr, "Erro ao alocar memória para mundo\n");
         exit(EXIT_FAILURE);
+    }
 
     mundo->tempo_atual = 0;
     mundo->tamanho_do_mundo = TAMANHO_DO_MUNDO;
@@ -336,70 +340,61 @@ senão:
 */
 void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    struct conjunto *missao;
-    if (!(missao = cria_subcjt_cjt(mundo->cj_habilidades, aleat(3, 6))))
+    struct conjunto *habilidades_missao;
+    if (!(habilidades_missao = cria_subcjt_cjt(mundo->cj_habilidades, aleat(3, 6))))
+    {
+        fprintf(stderr, "Erro ao criar conjunto de habilidades para missão\n");
         exit(EXIT_FAILURE);
+    }
 
     printf("%6d:MISSAO %3d HAB_REQ ", mundo->tempo_atual, IDMissao);
-    imprime_cjt(missao);
+    imprime_cjt(habilidades_missao);
 
     struct base base_encontrada;
-    struct conjunto *equipe_escolhida = escolhe_menor_equipe(*missao, IDMissao, mundo, &base_encontrada);
+    struct conjunto *equipe_escolhida = escolhe_menor_equipe(*habilidades_missao, IDMissao, mundo, &base_encontrada);
 
     printf("%6d:MISSAO %3d ", mundo->tempo_atual, IDMissao);
-    if (vazio_cjt(equipe_escolhida)) /* se nao houver equipe apta */
+    if (vazio_cjt(equipe_escolhida))
     {
         printf("IMPOSSIVEL\n");
-        /* Cria um evento de nova tentativa para o dia seguinte */
-        struct evento_t nova_tentativa = {mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, 0};
+        struct evento_t nova_tentativa = {aleat(mundo->tempo_atual, mundo->fim_do_mundo), MISSAO, IDMissao, 0};
         insere_lef(lista_de_eventos, &nova_tentativa);
     }
-    else /* se houver equipe apta */
+    else
     {
         printf("HER_EQS %d:", base_encontrada.ID_base);
-        imprime_cjt(base_encontrada.presentes); /* imprime os herois presentes na base escolhida */
+        imprime_cjt(equipe_escolhida);
 
         int ID_heroi_encontrado;
-        inicia_iterador_cjt(base_encontrada.presentes);
+        inicia_iterador_cjt(equipe_escolhida);
         int i;
-        for (i = 0; i < cardinalidade_cjt(base_encontrada.presentes); i++) /* incrementa a experiencia dos herois presentes na base escolhida */
+        for (i = 0; i < cardinalidade_cjt(equipe_escolhida); i++)
         {
-            incrementa_iterador_cjt(base_encontrada.presentes, &ID_heroi_encontrado);
-            if (ID_heroi_encontrado >= 0 && ID_heroi_encontrado < mundo->n_herois)
-            {
-                mundo->herois[ID_heroi_encontrado].experiencia++;
-            }
-            else
-            {
-                fprintf(stderr, "ID do herói inválido: %d\n", ID_heroi_encontrado);
-            }
+            incrementa_iterador_cjt(equipe_escolhida, &ID_heroi_encontrado);
+            mundo->herois[ID_heroi_encontrado].experiencia++;
         }
     }
-
-    /* Libera memória dos conjuntos */
-    missao = destroi_cjt(missao);
+    habilidades_missao = destroi_cjt(habilidades_missao);
     equipe_escolhida = destroi_cjt(equipe_escolhida);
 }
 
 /* encerra a simulacao no instante T */
 void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 {
-    printf("%6d:FIM\n", mundo->tempo_atual); /* imprime o fim do mundo */
+    printf("%6d:FIM\n", mundo->tempo_atual);
     int i;
-
-    for (i = 0; i < mundo->n_herois; i++) /* imprime a experiencia de cada heroi */
+    for (i = 0; i < mundo->n_herois; i++)
     {
         printf("HEROI %2d EXPERIENCIA %2d\n", mundo->herois[i].ID, mundo->herois[i].experiencia);
-        mundo->herois[i].habilidades_heroi = destroi_cjt(mundo->herois[i].habilidades_heroi); /* destroi os conjuntos de habilidades */
+        mundo->herois[i].habilidades_heroi = destroi_cjt(mundo->herois[i].habilidades_heroi);
     }
 
     for (i = 0; i < mundo->n_bases; i++)
     {
-        mundo->bases[i].presentes = destroi_cjt(mundo->bases[i].presentes); /* destroi os conjuntos de herois presentes */
-        fila_destroi(&mundo->bases[i].espera);                              /* destroi as filas de espera */
+        mundo->bases[i].presentes = destroi_cjt(mundo->bases[i].presentes);
+        fila_destroi(&mundo->bases[i].espera);
     }
 
-    /* libera memoria */
     free(mundo->herois);
     free(mundo->bases);
     mundo->cj_habilidades = destroi_cjt(mundo->cj_habilidades);
