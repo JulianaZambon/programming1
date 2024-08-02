@@ -6,6 +6,10 @@
 #include "lef.h"
 #include "fila.h"
 
+#define TAMANHO_DO_MUNDO 20000
+#define FIM_DO_MUNDO 34944
+
+
 /* EVENTOS --------------------------------------------------------------------- */
 #define CHEGADA 0
 #define SAIDA 1
@@ -185,8 +189,8 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
         exit(EXIT_FAILURE);
 
     mundo->tempo_atual = 0;
-    mundo->tamanho_do_mundo = 20000;
-    mundo->fim_do_mundo = 34944;
+    mundo->tamanho_do_mundo = TAMANHO_DO_MUNDO;
+    mundo->fim_do_mundo = FIM_DO_MUNDO;
     mundo->n_missoes = mundo->fim_do_mundo / 100;
 
     const int habilidades = 10;
