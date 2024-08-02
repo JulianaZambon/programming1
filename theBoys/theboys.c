@@ -388,7 +388,7 @@ int main()
 
     struct evento_t *evento_atual;
     /* ciclo da simulação do the boys*/
-    while (lista_de_eventos && (evento_atual = obtem_primeiro_lef(lista_de_eventos)))
+    while (lista_de_eventos && (evento_atual = retira_lef(lista_de_eventos)))
     {
         mundo->tempo_atual = evento_atual->tempo;
 
@@ -416,4 +416,3 @@ int main()
 
     return 0;
 }
-
