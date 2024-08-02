@@ -50,7 +50,7 @@ struct mundo
     struct base *bases;     /* vetor de bases */
     int n_missoes;          /* num total de missoes a cumprir */
     struct missao *Missoes; /* vetor de missoes */
-    int *cj_habilidades;    /* num total de habilidades distintas */
+    struct conjunto *cj_habilidades;    /* num total de habilidades distintas */
     int tamanho_do_mundo;
     int fim_do_mundo;
     int tempo_atual; /* tempo atual do mundo */
@@ -75,11 +75,6 @@ int max(int a, int b)
     return a > b ? a : b; /* retorna o maior valor */
 }
 
-int vazia_lef(struct lef_t *l)
-{
-    return (l == NULL || l->primeiro == NULL);
-}
-
 int base_lotada(int ID_base, struct mundo *mundo)
 {
     return cardinalidade_cjt(mundo->bases[ID_base].presentes) >= mundo->bases[ID_base].lotacao;
@@ -99,9 +94,8 @@ struct conjunto *escolhe_menor_equipe(struct conjunto missao, int ID_missao, str
 {
     struct conjunto *menor;
     if (!(menor = cria_cjt(cardinalidade_cjt(mundo->cj_habilidades))))
-    {
         return NULL;
-    }
+    
 
     struct conjunto *antiga_uniao;
     struct conjunto *uniao;
@@ -286,7 +280,7 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
 
     if (pertence_cjt(mundo->bases[IDBase].presentes, IDHeroi))
     {
-        remove_cjt(mundo->bases[IDBase].presentes, IDHeroi);
+        retira_cjt(mundo->bases[IDBase].presentes, IDHeroi);
         if (!(fila_vazia(mundo->bases[IDBase].espera)))
         {
             int ID_heroi_fila;
@@ -370,7 +364,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 
     free(mundo->herois);
     free(mundo->bases);
-    mundo->cj_habilidades = destroi_cjt(mundo->cj_habilidades);
+    destroi_cjt(mundo->cj_habilidades);
     free(mundo);
     *lista_de_eventos = destroi_lef(*lista_de_eventos);
 }
