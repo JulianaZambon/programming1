@@ -9,7 +9,6 @@
 #define TAMANHO_DO_MUNDO 20000
 #define FIM_DO_MUNDO 34944
 
-
 /* EVENTOS --------------------------------------------------------------------- */
 #define CHEGADA 0
 #define SAIDA 1
@@ -57,7 +56,7 @@ struct mundo
     struct conjunto *cj_habilidades; /* num total de habilidades distintas */
     int tamanho_do_mundo;
     int fim_do_mundo;
-    int tempo_atual;                   /* tempo atual do mundo */
+    int tempo_atual; /* tempo atual do mundo */
 };
 
 /* FUNÇÕES AUXILIARES ----------------------------------------------------------- */
@@ -182,9 +181,7 @@ struct base inicializa_base(int ID, int tamanho_do_mundo)
 
 struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
 {
-    struct mundo *mundo;
-    mundo = malloc(sizeof(struct mundo));
-
+    struct mundo *mundo = malloc(sizeof(struct mundo));
     if (!mundo)
         exit(EXIT_FAILURE);
 
@@ -194,45 +191,74 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
     mundo->n_missoes = mundo->fim_do_mundo / 100;
 
     const int habilidades = 10;
-
-    if (!(mundo->cj_habilidades = cria_cjt(habilidades)))
-        exit(EXIT_FAILURE);
-
     int i;
+
+    mundo->cj_habilidades = cria_cjt(habilidades);
+    if (!mundo->cj_habilidades)
+    {
+        free(mundo);
+        exit(EXIT_FAILURE);
+    }
+
     for (i = 0; i < habilidades; i++)
         insere_cjt(mundo->cj_habilidades, i);
 
     mundo->n_herois = habilidades * 5;
     mundo->n_bases = mundo->n_herois / 6;
 
-    /* cria um vetor de heróis e preenche ele */
-    if (!(mundo->herois = malloc(mundo->n_herois * sizeof(struct heroi))))
+    mundo->herois = malloc(mundo->n_herois * sizeof(struct heroi));
+    if (!mundo->herois)
+    {
+        destroi_cjt(mundo->cj_habilidades);
+        free(mundo);
         exit(EXIT_FAILURE);
+    }
 
     for (i = 0; i < mundo->n_herois; i++)
         mundo->herois[i] = inicializa_heroi(i, mundo->cj_habilidades);
 
-    /* cria vetor de bases e preenche ele */
-    if (!(mundo->bases = malloc(mundo->n_bases * sizeof(struct base))))
+    mundo->bases = malloc(mundo->n_bases * sizeof(struct base));
+    if (!mundo->bases)
+    {
+        free(mundo->herois);
+        destroi_cjt(mundo->cj_habilidades);
+        free(mundo);
         exit(EXIT_FAILURE);
+    }
 
     for (i = 0; i < mundo->n_bases; i++)
         mundo->bases[i] = inicializa_base(i, mundo->tamanho_do_mundo);
 
-    /* para cada heroi, cria um evento e insere na lef */
     for (i = 0; i < mundo->n_herois; i++)
     {
         struct evento_t *chegada_heroi = cria_evento(aleat(0, mundo->fim_do_mundo), CHEGADA, i, aleat(0, mundo->n_bases - 1));
+        if (!chegada_heroi)
+        {
+            fprintf(stderr, "Erro ao criar evento de chegada\n");
+            free(mundo->bases);
+            free(mundo->herois);
+            destroi_cjt(mundo->cj_habilidades);
+            free(mundo);
+            exit(EXIT_FAILURE);
+        }
         insere_lef(lista_de_eventos, chegada_heroi);
     }
 
-    /* cria um evento de fim e insere na lef*/
-    struct evento_t fim = {mundo->fim_do_mundo, FIM, 0, 0};
-    fim.tempo = mundo->fim_do_mundo;
-    fim.tipo = FIM;
-    fim.dado1 = 0;
-    fim.dado2 = 0;
-    insere_lef(lista_de_eventos, &fim);
+    struct evento_t *fim = malloc(sizeof(struct evento_t));
+    if (!fim)
+    {
+        fprintf(stderr, "Erro ao criar evento de fim\n");
+        free(mundo->bases);
+        free(mundo->herois);
+        destroi_cjt(mundo->cj_habilidades);
+        free(mundo);
+        exit(EXIT_FAILURE);
+    }
+    fim->tempo = mundo->fim_do_mundo;
+    fim->tipo = FIM;
+    fim->dado1 = 0;
+    fim->dado2 = 0;
+    insere_lef(lista_de_eventos, fim);
 
     return mundo;
 }
@@ -312,10 +338,7 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
 {
     struct conjunto *missao;
     if (!(missao = cria_subcjt_cjt(mundo->cj_habilidades, aleat(3, 6))))
-    {
-        fprintf(stderr, "Erro ao criar conjunto de habilidades da missão\n");
         exit(EXIT_FAILURE);
-    }
 
     printf("%6d:MISSAO %3d HAB_REQ ", mundo->tempo_atual, IDMissao);
     imprime_cjt(missao);
@@ -342,9 +365,12 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
         for (i = 0; i < cardinalidade_cjt(base_encontrada.presentes); i++) /* incrementa a experiencia dos herois presentes na base escolhida */
         {
             incrementa_iterador_cjt(base_encontrada.presentes, &ID_heroi_encontrado);
-            if (ID_heroi_encontrado >= 0 && ID_heroi_encontrado < mundo->n_herois) {
+            if (ID_heroi_encontrado >= 0 && ID_heroi_encontrado < mundo->n_herois)
+            {
                 mundo->herois[ID_heroi_encontrado].experiencia++;
-            } else {
+            }
+            else
+            {
                 fprintf(stderr, "ID do herói inválido: %d\n", ID_heroi_encontrado);
             }
         }
@@ -386,13 +412,13 @@ int main()
 {
     srand(time(0));
 
-    struct lef_t *lista_de_eventos; 
+    struct lef_t *lista_de_eventos;
     if (!(lista_de_eventos = cria_lef()))
         exit(EXIT_FAILURE);
 
     struct mundo *mundo = inicializa_mundo(lista_de_eventos); /* inicializa o mundo */
 
-    struct evento_t *evento_atual; 
+    struct evento_t *evento_atual;
 
     /* ciclo da simulação */
     while (lista_de_eventos && (evento_atual = retira_lef(lista_de_eventos))) /* enquanto houver eventos */
