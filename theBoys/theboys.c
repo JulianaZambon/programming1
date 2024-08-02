@@ -297,15 +297,7 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     insere_lef(lista_de_eventos, &chegada);
 }
 
-/* Uma missão M é disparada no instante T. São características de uma missão:
-    Cada missão ocorre em um local aleatório e requer um conjunto aleatório de habilidades; ambos são definidos durante a inicialização.
-    Cada equipe é formada pelo conjunto de heróis presentes em uma base.
-    Uma equipe está apta para a missão se a união das habilidades de seus heróis contém as habilidades requeridas pela missão.
-    Deve ser escolhida para a missão a equipe da base mais próxima ao local da missão e que esteja apta para ela.
-    Ao completar uma missão, os heróis da equipe escolhida ganham pontos de experiência.
-    Se uma missão não puder ser completada, ela é marcada como “impossível” e adiada de 24 horas.
-
-    calcula a distância de cada base ao local da missão M
+/*  Calcula a distância de cada base ao local da missão M
     encontra BMP = base mais próxima da missão cujos heróis possam cumpri-la
 se houver uma BMP:
     incrementa a experiência dos heróis presentes na base BMP
@@ -316,7 +308,10 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
 {
     struct conjunto *missao;
     if (!(missao = cria_subcjt_cjt(mundo->cj_habilidades, aleat(3, 6))))
+    {
+        fprintf(stderr, "Erro ao criar conjunto de habilidades da missão\n");
         exit(EXIT_FAILURE);
+    }
 
     printf("%6d:MISSAO %3d HAB_REQ ", mundo->tempo_atual, IDMissao);
     imprime_cjt(missao);
@@ -328,7 +323,8 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     if (vazio_cjt(equipe_escolhida)) /* se nao houver equipe apta */
     {
         printf("IMPOSSIVEL\n");
-        struct evento_t nova_tentativa = {aleat(mundo->tempo_atual, mundo->fim_do_mundo), MISSAO, IDMissao, 0};
+        /* Cria um evento de nova tentativa para o dia seguinte */
+        struct evento_t nova_tentativa = {mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, 0};
         insere_lef(lista_de_eventos, &nova_tentativa);
     }
     else /* se houver equipe apta */
@@ -342,9 +338,15 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
         for (i = 0; i < cardinalidade_cjt(base_encontrada.presentes); i++) /* incrementa a experiencia dos herois presentes na base escolhida */
         {
             incrementa_iterador_cjt(base_encontrada.presentes, &ID_heroi_encontrado);
-            mundo->herois[ID_heroi_encontrado].experiencia++;
+            if (ID_heroi_encontrado >= 0 && ID_heroi_encontrado < mundo->n_herois) {
+                mundo->herois[ID_heroi_encontrado].experiencia++;
+            } else {
+                fprintf(stderr, "ID do herói inválido: %d\n", ID_heroi_encontrado);
+            }
         }
     }
+
+    /* Libera memória dos conjuntos */
     missao = destroi_cjt(missao);
     equipe_escolhida = destroi_cjt(equipe_escolhida);
 }
@@ -395,7 +397,6 @@ int main()
 
         switch (evento_atual->tipo)
         {
-
         case CHEGADA:
             evento_chegada(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
             break;
