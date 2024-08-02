@@ -378,18 +378,60 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     equipe_escolhida = destroi_cjt(equipe_escolhida);
 }
 
-/* encerra a simulacao no instante T */
+/*  
+    O evento FIM encerra a simulação, gerando um relatório com informações sobre heróis e missões:
+
+    HEROI  0 PAC  32 VEL 3879 EXP  441 HABS [ 2 9 ]
+    significado: O herói 0 tem paciência 32, velocidade 3879, experiência 441 e possui as habilidades 2 e 9.
+    Foram cumpridas 5236 das 5256 missões geradas (99,62% de sucesso).
+    As missões tiveram entre 1 e 21 tentativas, a média foi de 2,08 tentativas/missão.
+
+    MISSOES CUMPRIDAS: %d/%d (%.2f%%)
+    TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f
+*/
 void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 {
     printf("%6d:FIM\n", mundo->tempo_atual);
-    int i;
-    for (i = 0; i < mundo->n_herois; i++)
+    
+    /* relatório sobre heróis */
+    for (int i = 0; i < mundo->n_herois; i++)
     {
-        printf("HEROI %2d EXPERIENCIA %2d\n", mundo->herois[i].ID, mundo->herois[i].experiencia);
-        mundo->herois[i].habilidades_heroi = destroi_cjt(mundo->herois[i].habilidades_heroi);
+        struct heroi *heroi = &mundo->herois[i];
+        printf("HEROI %2d PAC %3d VEL %4d EXP %3d HABS [", 
+            heroi->ID, heroi->paciencia, heroi->velocidade, heroi->experiencia);
+        
+        for (int j = 0; j < heroi->habilidades_heroi->card; j++)
+        {
+            printf("%d", heroi->habilidades_heroi->card);
+            if (j < heroi->habilidades_heroi->card - 1) 
+                printf(" ");
+        }
+        printf("]\n");
+        heroi->habilidades_heroi = destroi_cjt(heroi->habilidades_heroi);
     }
 
-    for (i = 0; i < mundo->n_bases; i++)
+    /* relatório sobre missões */
+    /*  MISSOES CUMPRIDAS: %d/%d (%.2f%%)
+        TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f*/
+    int missao_cumprida = 0;
+    int tentativas = 0;
+    int tentativas_min = 0;
+    int tentativas_max = 0;
+    float media_tentativas = 0.0;
+
+    for (int i = 0; i < mundo->n_missoes; i++)
+    {
+        if (mundo->Missoes[i].habilidades->card == 0)
+            missao_cumprida++;
+        else
+            tentativas++;
+    }
+
+    printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, (float)missao_cumprida / mundo->n_missoes * 100);
+    printf("TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f\n", tentativas_min, tentativas_max, media_tentativas);
+
+    /* liberação de memoria */
+    for (int i = 0; i < mundo->n_bases; i++)
     {
         mundo->bases[i].presentes = destroi_cjt(mundo->bases[i].presentes);
         fila_destroi(&mundo->bases[i].espera);
