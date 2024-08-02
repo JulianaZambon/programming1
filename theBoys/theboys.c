@@ -275,7 +275,7 @@ Cada evento tem um instante de ocorrência, pode consultar e alterar variáveis
 
 void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    printf("%6d:CHEGA HEROI %2d Local %d (%2d/%2d), ",
+    printf("%6d:CHEGA HEROI %2d BASE %d (%2d/%2d), ",
            mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes),
            mundo->bases[IDBase].lotacao);
 
@@ -294,7 +294,7 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
         return;
     }
 
-    printf("ENTRA\n");
+    printf("ESPERA\n");
     insere_cjt(mundo->bases[IDBase].presentes, IDHeroi);                                           /* insere o heroi na base */
     int tempo_permanencia_base = max(1, mundo->herois[IDHeroi].paciencia / 10 + aleat(-2, 6));     /* calcula o tempo de permanencia do heroi na base */
     struct evento_t saida = {mundo->tempo_atual + tempo_permanencia_base, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
@@ -305,7 +305,7 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 o porteiro de B é avisado, pois uma vaga foi liberada: */
 void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    printf("%6d:SAIDA HEROI %2d Local %d (%2d/%2d)",
+    printf("%6d:SAIDA HEROI %2d BASE %d (%2d/%2d)",
            mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes),
            mundo->bases[IDBase].lotacao);
 
