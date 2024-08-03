@@ -347,15 +347,17 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 
             45844: ESPERA HEROI  0 BASE 2 ( 4)
             %6d: ESPERA HEROI %2d BASE %d (%2d)
-            Significado: no instante 45844 o herói 0 entra na fila de espera da base 2, 
+            Significado: no instante 45844 o herói 0 entra na fila de espera da base 2,
             que já tem 4 heróis aguardando na fila (sem contar ele).
             */
             printf("%6d: ESPERA HEROI %2d BASE %d (%2d)\n", mundo->tempo_atual,
-            IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes));
+                   IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes));
             return;
         }
         /* se ele nao tem paciencia pra esperar */
-        printf("DESISTE\n");
+        /* Evento DESISTE*/
+        printf("%6d: DESIST HEROI %2d BASE %d\n", mundo->tempo_atual, IDHeroi, IDBase);
+        
         struct evento_t saida = {mundo->tempo_atual, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
         insere_lef(lista_de_eventos, &saida);
         return;
@@ -383,9 +385,17 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
         {
             int ID_heroi_fila;
             dequeue(mundo->bases[IDBase].espera, &ID_heroi_fila); /* retira o heroi da fila */
-            printf(", REMOVE FILA HEROI %d", ID_heroi_fila);
+
+            /* Evento AVISA*/
+            printf(" %6d:AVISA PORTEIRO BASE %d ADMITE %2d\n", mundo->tempo_atual, IDBase, ID_heroi_fila);
             struct evento_t chegada_heroi_fila = {mundo->tempo_atual, CHEGADA, ID_heroi_fila, IDBase}; /* cria um evento de chegada para o heroi retirado da fila */
-            insere_lef(lista_de_eventos, &chegada_heroi_fila);                                         /* insere o evento na lista de eventos */
+            insere_lef(lista_de_eventos, &chegada_heroi_fila);
+
+            /* Evento AVISA */
+            printf("%6d AVISA PORTEIRO BASE %d (%2d/%2d) FILA [",
+                   mundo->tempo_atual, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes),
+                   mundo->bases[IDBase].lotacao);
+            printf("]\n");
         }
     }
     printf("\n");
