@@ -266,6 +266,65 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
 
     return mundo;
 }
+/*
+Antes de iniciar a simulação, é necessário criar e inserir na LEF alguns eventos iniciais.
+Esses eventos serão em seguida processados e poderão gerar novos eventos, o que fará avançar a simulação.
+
+Cada herói chegará em uma base aleatória em algum momento dos três primeiros dias de simulação:
+
+para cada herói H:
+    base  = número aleatório [0...N_BASES-1]
+    tempo = número aleatório [0...4320]  // 4320 = 60*24*3 = 3 dias
+    criar e inserir na LEF o evento CHEGA (tempo, H, base)
+
+Cada missão deve ser agendada para ocorrer em algum momento da simulação:
+
+para cada missão M:
+    tempo = número aleatório [0...T_FIM_DO_MUNDO]
+    criar e inserir na LEF o evento MISSÃO (tempo, M)
+
+O evento FIM deve ser agendado para o instante final da simulação:
+
+tempo = T_FIM_DO_MUNDO
+criar e inserir na LEF o evento FIM (tempo)
+
+*/
+void inicializa_eventos_iniciais(struct mundo *mundo, struct lef_t *lista_de_eventos, int T_FIM_DO_MUNDO)
+{
+    int i;
+    for (i = 0; i < mundo->n_herois; i++)
+    {
+        int base = aleat(0, mundo->n_bases - 1);
+        int tempo = aleat(0, 4320); /* 4320 = 60*24*3 = 3 dias */
+        struct evento_t *chegada_heroi = cria_evento(tempo, CHEGADA, i, base);
+        if (!chegada_heroi)
+        {
+            fprintf(stderr, "Erro ao criar evento de chegada\n");
+            exit(EXIT_FAILURE);
+        }
+        insere_lef(lista_de_eventos, chegada_heroi);
+    }
+
+    for (i = 0; i < mundo->n_missoes; i++)
+    {
+        int tempo = aleat(0, T_FIM_DO_MUNDO);
+        struct evento_t *missao = cria_evento(tempo, MISSAO, i, 0);
+        if (!missao)
+        {
+            fprintf(stderr, "Erro ao criar evento de missao\n");
+            exit(EXIT_FAILURE);
+        }
+        insere_lef(lista_de_eventos, missao);
+    }
+
+    struct evento_t *fim = cria_evento(T_FIM_DO_MUNDO, FIM, 0, 0);
+    if (!fim)
+    {
+        fprintf(stderr, "Erro ao criar evento de fim\n");
+        exit(EXIT_FAILURE);
+    }
+    insere_lef(lista_de_eventos, fim);
+}
 
 /* EVENTOS ---------------------------------------------------------------------- */
 /* Os eventos implementam as mudanças de estado que fazem evoluir a simulação.
@@ -378,7 +437,7 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     equipe_escolhida = destroi_cjt(equipe_escolhida);
 }
 
-/*  
+/*
     O evento FIM encerra a simulação, gerando um relatório com informações sobre heróis e missões:
 
     HEROI  0 PAC  32 VEL 3879 EXP  441 HABS [ 2 9 ]
@@ -392,18 +451,19 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
 void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 {
     printf("%6d:FIM\n", mundo->tempo_atual);
-    
+
+    int i, j;
     /* relatório sobre heróis */
-    for (int i = 0; i < mundo->n_herois; i++)
+    for (i = 0; i < mundo->n_herois; i++)
     {
         struct heroi *heroi = &mundo->herois[i];
-        printf("HEROI %2d PAC %3d VEL %4d EXP %3d HABS [", 
-            heroi->ID, heroi->paciencia, heroi->velocidade, heroi->experiencia);
-        
-        for (int j = 0; j < heroi->habilidades_heroi->card; j++)
+        printf("HEROI %2d PAC %3d VEL %4d EXP %3d HABS [",
+               heroi->ID, heroi->paciencia, heroi->velocidade, heroi->experiencia);
+
+        for (j = 0; j < heroi->habilidades_heroi->card; j++)
         {
             printf("%d", heroi->habilidades_heroi->card);
-            if (j < heroi->habilidades_heroi->card - 1) 
+            if (j < heroi->habilidades_heroi->card - 1)
                 printf(" ");
         }
         printf("]\n");
@@ -419,7 +479,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     int tentativas_max = 0;
     float media_tentativas = 0.0;
 
-    for (int i = 0; i < mundo->n_missoes; i++)
+    for (i = 0; i < mundo->n_missoes; i++)
     {
         if (mundo->Missoes[i].habilidades->card == 0)
             missao_cumprida++;
@@ -431,7 +491,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     printf("TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f\n", tentativas_min, tentativas_max, media_tentativas);
 
     /* liberação de memoria */
-    for (int i = 0; i < mundo->n_bases; i++)
+    for (i = 0; i < mundo->n_bases; i++)
     {
         mundo->bases[i].presentes = destroi_cjt(mundo->bases[i].presentes);
         fila_destroi(&mundo->bases[i].espera);
@@ -454,6 +514,10 @@ int main()
         exit(EXIT_FAILURE);
 
     struct mundo *mundo = inicializa_mundo(lista_de_eventos); /* inicializa o mundo */
+
+    int T_FIM_DO_MUNDO = mundo->fim_do_mundo;
+
+    inicializa_eventos_iniciais(mundo, lista_de_eventos, T_FIM_DO_MUNDO); /* inicializa os eventos iniciais */
 
     struct evento_t *evento_atual;
 
