@@ -340,13 +340,21 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 
     if (base_lotada(IDBase, mundo)) /* se a base estiver lotada */
     {
-        if (paciencia_do_heroi() > 50) /* se a paciencia do heroi for maior que 50 */
+        if (paciencia_do_heroi() > 50) /* se o heroi tem paciencia pra esperar */
         {
             enqueue(mundo->bases[IDBase].espera, IDHeroi); /* coloca o heroi na fila de espera */
-            printf("FILA %d\n", fila_tamanho(mundo->bases[IDBase].espera));
+            /*Evento ESPERA
+
+            45844: ESPERA HEROI  0 BASE 2 ( 4)
+            %6d: ESPERA HEROI %2d BASE %d (%2d)
+            Significado: no instante 45844 o herói 0 entra na fila de espera da base 2, 
+            que já tem 4 heróis aguardando na fila (sem contar ele).
+            */
+            printf("%6d: ESPERA HEROI %2d BASE %d (%2d)\n", mundo->tempo_atual,
+            IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes));
             return;
         }
-
+        /* se ele nao tem paciencia pra esperar */
         printf("DESISTE\n");
         struct evento_t saida = {mundo->tempo_atual, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
         insere_lef(lista_de_eventos, &saida);
