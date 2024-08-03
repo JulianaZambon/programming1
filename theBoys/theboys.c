@@ -671,12 +671,10 @@ int main()
 
     inicializa_eventos_iniciais(mundo, lista_de_eventos); /* inicializa os eventos iniciais */
 
-    /* struct evento_t *evento_atual;*/
-
     mundo->tempo_atual = T_INICIO;
 
     /* ciclo da simulação */
-/*    while (lista_de_eventos) 
+    while (lista_de_eventos) 
     {
         struct evento_t *evento_atual = retira_lef(lista_de_eventos); 
         mundo->tempo_atual = evento_atual->tempo; 
@@ -700,7 +698,7 @@ int main()
             break;
 
         case AVISA:
-            evento_avisa(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+            evento_avisa(evento_atual->dado1, mundo, lista_de_eventos);
             break;
 
         case ENTRA:
@@ -710,19 +708,18 @@ int main()
         case VIAJA:
             evento_viaja(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
             break;
-
+        
         case MISSAO:
-            evento_missao(evento_atual->dado1, mundo, lista_de_eventos);
+            evento_missao(evento_atual->dado1, mundo);
             break;
 
         case FIM:
             evento_fim(mundo, &lista_de_eventos);
             break;
-
         }
         destroi_evento(evento_atual);
     }
-*/
+
     destroi_lef(lista_de_eventos); /* destroi a lista de eventos */
     int i;
     for (i = 0; i < mundo->n_bases; i++)
