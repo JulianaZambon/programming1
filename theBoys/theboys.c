@@ -322,18 +322,19 @@ senão:
 void evento_chega(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
     mundo->herois[IDHeroi].base_atual = IDBase; /* atualiza base de H */
-    int espera = 0;
 
+    int espera = 0;
     if (!base_lotada(IDBase, mundo) && fila_vazia(mundo->bases[IDBase].espera))
         espera = 1;
     else
-    /* espera = (paciência de H) > (10 * tamanho da fila em B) */
         espera = mundo->herois[IDHeroi].paciencia > 10 * fila_tamanho(mundo->bases[IDBase].espera);
 
     if (espera)
     {
         struct evento_t *espera = cria_evento(mundo->tempo_atual, ESPERA, IDHeroi, IDBase); /* cria e insere na LEF o evento ESPERA (agora, H, B) */
+
         printf("%6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) ESPERA\n", mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
+
         if (!espera)
         {
             fprintf(stderr, "Erro ao criar evento de espera\n");
@@ -345,7 +346,9 @@ void evento_chega(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     else
     {
         struct evento_t *desiste = cria_evento(mundo->tempo_atual, DESISTE, IDHeroi, IDBase); /* cria e insere na LEF o evento DESISTE (agora, H, B) */
+
         printf("%6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) DESISTE\n", mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
+
         if (!desiste)
         {
             fprintf(stderr, "Erro ao criar evento de desiste\n");
@@ -365,7 +368,7 @@ cria e insere na LEF o evento AVISA (agora, B)
 */
 void evento_espera(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    enqueue(mundo->bases[IDBase].espera, IDHeroi); /* adiciona H ao fim da fila de espera de B */
+    enqueue(mundo->bases[IDBase].espera, IDHeroi);                                    /* adiciona H ao fim da fila de espera de B */
     struct evento_t *avisa = cria_evento(mundo->tempo_atual, AVISA, IDHeroi, IDBase); /* cria e insere na LEF o evento AVISA (agora, B) */
 
     printf("%6d: ESPERA HEROI %2d BASE %d\n", mundo->tempo_atual, IDHeroi, IDBase);
@@ -387,9 +390,9 @@ cria e insere na LEF o evento VIAJA (agora, H, D)
 */
 void evento_desiste(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
+    int IDBaseDestino = aleat(0, mundo->n_bases - 1);                                        /* escolhe uma base destino D aleatória */
     struct evento_t *viaja = cria_evento(mundo->tempo_atual, VIAJA, IDHeroi, IDBaseDestino); /* cria e insere na LEF o evento VIAJA (agora, H, D) */
-    
+
     printf("%6d: DESIST HEROI %2d BASE %d\n", mundo->tempo_atual, IDHeroi, IDBase);
 
     if (!viaja)
@@ -413,10 +416,10 @@ cria e insere na LEF o evento AVISA (agora, B)
 */
 void evento_sai(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
-    retira_cjt(mundo->bases[IDBase].presentes, IDHeroi); /* retira H do conjunto de heróis presentes em B */
+    int IDBaseDestino = aleat(0, mundo->n_bases - 1);                                        /* escolhe uma base destino D aleatória */
+    retira_cjt(mundo->bases[IDBase].presentes, IDHeroi);                                     /* retira H do conjunto de heróis presentes em B */
     struct evento_t *viaja = cria_evento(mundo->tempo_atual, VIAJA, IDHeroi, IDBaseDestino); /* cria e insere na LEF o evento VIAJA (agora, H, D) */
-    struct evento_t *avisa = cria_evento(mundo->tempo_atual, AVISA, IDHeroi, IDBase); /* cria e insere na LEF o evento AVISA (agora, B) */
+    struct evento_t *avisa = cria_evento(mundo->tempo_atual, AVISA, IDHeroi, IDBase);        /* cria e insere na LEF o evento AVISA (agora, B) */
 
     printf("%6d: SAI    HEROI %2d BASE %d (%2d/%2d)\n", mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
 
@@ -458,8 +461,8 @@ void evento_avisa(int IDBase, struct mundo *mundo, struct lef_t *lista_de_evento
     while (!fila_vazia(mundo->bases[IDBase].espera) && !base_lotada(IDBase, mundo))
     {
         int IDHeroi = 0;
-        dequeue(mundo->bases[IDBase].espera, &IDHeroi); /* retira primeiro herói (H') da fila de B */
-        insere_cjt(mundo->bases[IDBase].presentes, IDHeroi); /* adiciona H' ao conjunto de heróis presentes em B */
+        dequeue(mundo->bases[IDBase].espera, &IDHeroi);                                   /* retira primeiro herói (H') da fila de B */
+        insere_cjt(mundo->bases[IDBase].presentes, IDHeroi);                              /* adiciona H' ao conjunto de heróis presentes em B */
         struct evento_t *entra = cria_evento(mundo->tempo_atual, ENTRA, IDHeroi, IDBase); /* cria e insere na LEF o evento ENTRA (agora, H', B) */
 
         printf("%6d: AVISA  PORTEIRO BASE %d ADMITE %2d\n", mundo->tempo_atual, IDBase, IDHeroi);
@@ -488,11 +491,11 @@ saída:
 */
 void evento_entra(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int TPB = 15 + mundo->herois[IDHeroi].paciencia * aleat(1, 20); /* calcula TPB = tempo de permanência na base */
+    int TPB = 15 + mundo->herois[IDHeroi].paciencia * aleat(1, 20);                     /* calcula TPB = tempo de permanência na base */
     struct evento_t *sai = cria_evento(mundo->tempo_atual + TPB, SAI, IDHeroi, IDBase); /* cria e insere na LEF o evento SAI (agora + TPB, H, B) */
 
     printf("%6d: ENTRA  HEROI %2d BASE %d (%2d/%2d) SAI %d\n", mundo->tempo_atual,
-    IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao, mundo->tempo_atual + TPB);
+           IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao, mundo->tempo_atual + TPB);
 
     if (!sai)
     {
@@ -520,7 +523,7 @@ void evento_viaja(int IDHeroi, int IDMissao, struct mundo *mundo, struct lef_t *
     int IDBaseDestino = IDMissao; /* escolhe uma base destino D aleatória */
 
     int dist = distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX, mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
-    mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY); /* distância cartesiana entre a base atual de H e a base D */
+                         mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY); /* distância cartesiana entre a base atual de H e a base D */
 
     int duracao = dist / mundo->herois[IDHeroi].velocidade; /* duração = distância / velocidade de H */
 
@@ -552,19 +555,19 @@ void evento_missao(int IDMissao, struct mundo *mundo)
     int tentativas_por_missao = 0;
     for (i = 0; i < mundo->n_herois; i++)
     {
-        if (contido_cjt(mundo->missoes[IDMissao].habilidades, mundo->herois[i].habilidades_heroi)) 
+        if (contido_cjt(mundo->missoes[IDMissao].habilidades, mundo->herois[i].habilidades_heroi))
             tentativas_por_missao++;
     }
 
     printf("%6d: MISSAO %d TENT %d HAB REQ: [ ", mundo->tempo_atual, IDMissao, tentativas_por_missao);
-        imprime_cjt(mundo->missoes->habilidades);
+    imprime_cjt(mundo->missoes->habilidades);
     printf(" ]\n");
 
     struct base base_encontrada;
     struct conjunto *equipe;
     /* escolher a menor equipe */
     equipe = escolhe_menor_equipe(*mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
-    
+
     if (!(equipe))
     {
         fprintf(stderr, "Erro ao escolher equipe\n");
@@ -635,7 +638,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     for (i = 0; i < mundo->n_herois; i++)
     {
         printf("HEROI %2d PAC %2d VEL %d EXP %d HABS [ ", i, mundo->herois[i].paciencia,
-        mundo->herois[i].velocidade, mundo->herois[i].experiencia);
+               mundo->herois[i].velocidade, mundo->herois[i].experiencia);
         imprime_cjt(mundo->herois[i].habilidades_heroi);
         printf(" ]\n");
     }
@@ -643,16 +646,16 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     /* informacoes sobre missoes */
     int missao_cumprida = 0;
     for (i = 0; i < mundo->n_missoes; i++) /* verifica se a missao foi cumprida */
-        if (contido_cjt(mundo->missoes[i].habilidades, mundo->missoes[i].habilidades))  
+        if (contido_cjt(mundo->missoes[i].habilidades, mundo->missoes[i].habilidades))
             missao_cumprida++;
 
     printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, (float)missao_cumprida / mundo->n_missoes * 100);
 
     int tentativas_por_missao = 0;
     for (i = 0; i < mundo->n_missoes; i++) /* verifica o numero de tentativas por missao */
-            /*code here*/
+                                           /*code here*/
 
-    printf("TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f\n", 0, 0, (float)tentativas_por_missao / mundo->n_missoes);
+        printf("TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f\n", 0, 0, (float)tentativas_por_missao / mundo->n_missoes);
 
     destroi_lef(*lista_de_eventos);
     *lista_de_eventos = NULL;
@@ -663,21 +666,22 @@ int main()
 {
     srand(time(0));
 
-    struct lef_t *lista_de_eventos;
-    if (!(lista_de_eventos = cria_lef()))
-        exit(EXIT_FAILURE);
+    struct mundo *mundo = inicializa_mundo();    /* inicializa o mundo */
+    struct lef_t *lista_de_eventos = cria_lef(); /* cria a lista de eventos futuros */
 
-    struct mundo *mundo = inicializa_mundo(); /* inicializa o mundo */
+    if (!(mundo) || !(lista_de_eventos))
+        exit(EXIT_FAILURE);
 
     inicializa_eventos_iniciais(mundo, lista_de_eventos); /* inicializa os eventos iniciais */
 
-    mundo->tempo_atual = T_INICIO;
+    mundo->tempo_atual = T_INICIO; /* tempo atual do mundo */
 
-    /* ciclo da simulação */
-    while (lista_de_eventos) 
+    /* ciclo da simulação
+    while (lista_de_eventos)
     {
-        struct evento_t *evento_atual = retira_lef(lista_de_eventos); 
-        mundo->tempo_atual = evento_atual->tempo; 
+        struct evento_t *evento_atual = retira_lef(lista_de_eventos);
+
+        mundo->tempo_atual = evento_atual->tempo;
 
         switch (evento_atual->tipo)
         {
@@ -685,40 +689,40 @@ int main()
             evento_chega(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
             break;
 
-        case ESPERA:
-            evento_espera(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-            break;
+            case ESPERA:
+                evento_espera(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+                break;
 
-        case DESISTE:
-            evento_desiste(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-            break;
+            case DESISTE:
+                evento_desiste(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+                break;
 
-        case SAI:
-            evento_sai(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-            break;
+            case SAI:
+                evento_sai(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+                break;
 
-        case AVISA:
-            evento_avisa(evento_atual->dado1, mundo, lista_de_eventos);
-            break;
+            case AVISA:
+                evento_avisa(evento_atual->dado1, mundo, lista_de_eventos);
+                break;
 
-        case ENTRA:
-            evento_entra(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-            break;
+            case ENTRA:
+                evento_entra(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+                break;
 
-        case VIAJA:
-            evento_viaja(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-            break;
-        
-        case MISSAO:
-            evento_missao(evento_atual->dado1, mundo);
-            break;
+            case VIAJA:
+                evento_viaja(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+                break;
 
-        case FIM:
-            evento_fim(mundo, &lista_de_eventos);
-            break;
+            case MISSAO:
+                evento_missao(evento_atual->dado1, mundo);
+                break;
+
+            case FIM:
+                evento_fim(mundo, &lista_de_eventos);
+                break;
         }
         destroi_evento(evento_atual);
-    }
+    }*/
 
     destroi_lef(lista_de_eventos); /* destroi a lista de eventos */
     int i;
