@@ -334,6 +334,7 @@ Cada evento tem um instante de ocorrência, pode consultar e alterar variáveis
 
 void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
+    /* Evento CHEGA */
     printf("%6d:CHEGA HEROI %2d BASE %d (%2d/%2d), ",
            mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes),
            mundo->bases[IDBase].lotacao);
@@ -343,21 +344,16 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
         if (paciencia_do_heroi() > 50) /* se o heroi tem paciencia pra esperar */
         {
             enqueue(mundo->bases[IDBase].espera, IDHeroi); /* coloca o heroi na fila de espera */
-            /*Evento ESPERA
-
-            45844: ESPERA HEROI  0 BASE 2 ( 4)
-            %6d: ESPERA HEROI %2d BASE %d (%2d)
-            Significado: no instante 45844 o herói 0 entra na fila de espera da base 2,
-            que já tem 4 heróis aguardando na fila (sem contar ele).
-            */
+            /* Evento ESPERA */
             printf("%6d: ESPERA HEROI %2d BASE %d (%2d)\n", mundo->tempo_atual,
                    IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes));
+
             return;
         }
         /* se ele nao tem paciencia pra esperar */
         /* Evento DESISTE*/
         printf("%6d: DESIST HEROI %2d BASE %d\n", mundo->tempo_atual, IDHeroi, IDBase);
-        
+
         struct evento_t saida = {mundo->tempo_atual, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
         insere_lef(lista_de_eventos, &saida);
         return;
@@ -387,9 +383,15 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
             dequeue(mundo->bases[IDBase].espera, &ID_heroi_fila); /* retira o heroi da fila */
 
             /* Evento AVISA*/
+            /* porteiro admitiu */
             printf(" %6d:AVISA PORTEIRO BASE %d ADMITE %2d\n", mundo->tempo_atual, IDBase, ID_heroi_fila);
             struct evento_t chegada_heroi_fila = {mundo->tempo_atual, CHEGADA, ID_heroi_fila, IDBase}; /* cria um evento de chegada para o heroi retirado da fila */
             insere_lef(lista_de_eventos, &chegada_heroi_fila);
+
+            /* Evento ENTRA */
+            /* herói entrou na base depois de ficar na fila de espera*/
+            printf("%6d: ENTRA  HEROI %2d BASE %d (%2d/%2d) SAI %d\n", mundo->tempo_atual, ID_heroi_fila, IDBase,
+                   cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao, IDHeroi);
 
             /* Evento AVISA */
             printf("%6d AVISA PORTEIRO BASE %d (%2d/%2d) FILA [",
@@ -400,12 +402,12 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     }
     printf("\n");
 
-    int destino = aleat(0, mundo->n_bases - 1);
-    int tempo_viagem = distancia(mundo->bases[IDBase].localX, mundo->bases[IDBase].localY,
+    int destino = aleat(0, mundo->n_bases - 1);                                            /* escolhe uma base de destino aleatória */
+    int tempo_viagem = distancia(mundo->bases[IDBase].localX, mundo->bases[IDBase].localY, /* calcula o tempo de viagem */
                                  mundo->bases[destino].localX, mundo->bases[destino].localY) /
                        velocidade_heroi();
-    struct evento_t chegada = {mundo->tempo_atual + tempo_viagem, CHEGADA, IDHeroi, destino};
-    insere_lef(lista_de_eventos, &chegada);
+    struct evento_t chegada = {mundo->tempo_atual + tempo_viagem, CHEGADA, IDHeroi, destino}; /* cria um evento de chegada para o heroi */
+    insere_lef(lista_de_eventos, &chegada);                                                   /* insere o evento na lista de eventos */
 }
 
 /*  Calcula a distância de cada base ao local da missão M
