@@ -151,7 +151,7 @@ struct heroi inicializa_heroi(int ID, struct conjunto *habilidades)
     struct heroi h;
 
     h.ID = ID;
-    h.paciencia = aleat(0, 100);
+    h.paciencia = paciencia_do_heroi();
     h.experiencia = 0;
     h.velocidade = velocidade_heroi();
 
@@ -269,25 +269,20 @@ struct mundo *inicializa_mundo(struct lef_t *lista_de_eventos)
 /*
 Antes de iniciar a simulação, é necessário criar e inserir na LEF alguns eventos iniciais.
 Esses eventos serão em seguida processados e poderão gerar novos eventos, o que fará avançar a simulação.
-
 Cada herói chegará em uma base aleatória em algum momento dos três primeiros dias de simulação:
-
 para cada herói H:
     base  = número aleatório [0...N_BASES-1]
     tempo = número aleatório [0...4320]  // 4320 = 60*24*3 = 3 dias
     criar e inserir na LEF o evento CHEGA (tempo, H, base)
 
 Cada missão deve ser agendada para ocorrer em algum momento da simulação:
-
 para cada missão M:
     tempo = número aleatório [0...T_FIM_DO_MUNDO]
     criar e inserir na LEF o evento MISSÃO (tempo, M)
 
 O evento FIM deve ser agendado para o instante final da simulação:
-
 tempo = T_FIM_DO_MUNDO
 criar e inserir na LEF o evento FIM (tempo)
-
 */
 void inicializa_eventos_iniciais(struct mundo *mundo, struct lef_t *lista_de_eventos, int T_FIM_DO_MUNDO)
 {
@@ -331,7 +326,6 @@ void inicializa_eventos_iniciais(struct mundo *mundo, struct lef_t *lista_de_eve
 Cada evento tem um instante de ocorrência, pode consultar e alterar variáveis
 (atributos das entidades) e pode criar outros eventos no presente ou no futuro.
 */
-
 void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
     /* Evento CHEGA */
@@ -356,10 +350,20 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 
         struct evento_t saida = {mundo->tempo_atual, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
         insere_lef(lista_de_eventos, &saida);
+
+        /* Evento VIAJA */
+        printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d", mundo->tempo_atual,
+               IDHeroi, mundo->herois[IDHeroi].base_atual, IDBase,
+               distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX, mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
+                         mundo->bases[IDBase].localX, mundo->bases[IDBase].localY),
+               mundo->herois[IDHeroi].velocidade,
+               mundo->tempo_atual + distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX, mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
+                                              mundo->bases[IDBase].localX, mundo->bases[IDBase].localY) /
+                                        mundo->herois[IDHeroi].velocidade);
+
         return;
     }
 
-    printf("ESPERA\n");
     insere_cjt(mundo->bases[IDBase].presentes, IDHeroi);                                           /* insere o heroi na base */
     int tempo_permanencia_base = max(1, mundo->herois[IDHeroi].paciencia / 10 + aleat(-2, 6));     /* calcula o tempo de permanencia do heroi na base */
     struct evento_t saida = {mundo->tempo_atual + tempo_permanencia_base, SAIDA, IDHeroi, IDBase}; /* cria um evento de saida para o heroi */
@@ -370,9 +374,10 @@ void evento_chegada(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 o porteiro de B é avisado, pois uma vaga foi liberada: */
 void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    printf("%6d:SAIDA HEROI %2d BASE %d (%2d/%2d)",
-           mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes),
-           mundo->bases[IDBase].lotacao);
+    /* Evento SAI */
+    printf("%6d: SAI    HEROI %2d BASE %d (%2d/%2d)", mundo->tempo_atual, IDHeroi, IDBase,
+           cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
+
 
     if (pertence_cjt(mundo->bases[IDBase].presentes, IDHeroi)) /* se o heroi estiver presente na base */
     {
@@ -402,10 +407,21 @@ void evento_saida(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     }
     printf("\n");
 
+
     int destino = aleat(0, mundo->n_bases - 1);                                            /* escolhe uma base de destino aleatória */
     int tempo_viagem = distancia(mundo->bases[IDBase].localX, mundo->bases[IDBase].localY, /* calcula o tempo de viagem */
                                  mundo->bases[destino].localX, mundo->bases[destino].localY) /
                        velocidade_heroi();
+                       
+
+    /* Evento VIAJA */
+    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n", mundo->tempo_atual,
+           IDHeroi, IDBase, destino,
+           distancia(mundo->bases[IDBase].localX, mundo->bases[IDBase].localY,
+                     mundo->bases[destino].localX, mundo->bases[destino].localY),
+           mundo->herois[IDHeroi].velocidade,
+           mundo->tempo_atual + tempo_viagem);
+
     struct evento_t chegada = {mundo->tempo_atual + tempo_viagem, CHEGADA, IDHeroi, destino}; /* cria um evento de chegada para o heroi */
     insere_lef(lista_de_eventos, &chegada);                                                   /* insere o evento na lista de eventos */
 }
