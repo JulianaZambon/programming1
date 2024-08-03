@@ -315,9 +315,7 @@ se espera:
     cria e insere na LEF o evento ESPERA (agora, H, B)
 senão:
     cria e insere na LEF o evento DESISTE (agora, H, B)
-*/
 
-/*
 %6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) ESPERA
 %6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) DESISTE
 */
@@ -329,7 +327,8 @@ void evento_chega(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
     if (!base_lotada(IDBase, mundo) && fila_vazia(mundo->bases[IDBase].espera))
         espera = 1;
     else
-        espera = mundo->herois[IDHeroi].paciencia > 10 * cardinalidade_cjt(mundo->bases[IDBase].espera);
+    /* espera = (paciência de H) > (10 * tamanho da fila em B) */
+        espera = mundo->herois[IDHeroi].paciencia > 10 * fila_tamanho(mundo->bases[IDBase].espera);
 
     if (espera)
     {
@@ -547,13 +546,15 @@ void evento_viaja(int IDHeroi, int IDMissao, struct mundo *mundo, struct lef_t *
  ou
 %6d: MISSAO %d IMPOSSIVEL
 */
-void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eventos)
+void evento_missao(int IDMissao, struct mundo *mundo)
 {
     int i;
-    /* tentativas de realizar X missao*/
-    /* code here */
     int tentativas_por_missao = 0;
-
+    for (i = 0; i < mundo->n_herois; i++)
+    {
+        if (contido_cjt(mundo->missoes[IDMissao].habilidades, mundo->herois[i].habilidades_heroi)) 
+            tentativas_por_missao++;
+    }
 
     printf("%6d: MISSAO %d TENT %d HAB REQ: [ ", mundo->tempo_atual, IDMissao, tentativas_por_missao);
         imprime_cjt(mundo->missoes->habilidades);
@@ -561,15 +562,10 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
 
     struct base base_encontrada;
     struct conjunto *equipe;
-    equipe = escolhe_menor_equipe(mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
+    /* escolher a menor equipe */
+    equipe = escolhe_menor_equipe(*mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
     
     if (!(equipe))
-    {
-        fprintf(stderr, "Erro ao escolher equipe\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (!equipe)
     {
         fprintf(stderr, "Erro ao escolher equipe\n");
         exit(EXIT_FAILURE);
@@ -615,7 +611,7 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eve
     imprime_cjt(uniao);
     printf("]\n");
 
-    if (contido_cjt(&mundo->missoes[IDMissao].habilidades, uniao))
+    if (contido_cjt(mundo->missoes[IDMissao].habilidades, uniao))
     {
         printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
         mundo->missoes[IDMissao].habilidades = uniao;
@@ -647,7 +643,7 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     /* informacoes sobre missoes */
     int missao_cumprida = 0;
     for (i = 0; i < mundo->n_missoes; i++) /* verifica se a missao foi cumprida */
-        /* code here */
+        if (contido_cjt(mundo->missoes[i].habilidades, mundo->missoes[i].habilidades))  
             missao_cumprida++;
 
     printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, (float)missao_cumprida / mundo->n_missoes * 100);
