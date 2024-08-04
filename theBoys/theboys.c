@@ -661,7 +661,12 @@ FIM (T):
 void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
 {
     int i;
-    /* informaçõe sobre herois */
+    int missao_cumprida = 0;
+    int min_tentativas = 987654321;
+    int max_tentativas = 0;
+    int total_tentativas = 0;
+
+    /* Informações sobre heróis */
     for (i = 0; i < mundo->n_herois; i++)
     {
         printf("HEROI %2d PAC %2d VEL %d EXP %d HABS ", i, mundo->herois[i].paciencia,
@@ -669,16 +674,12 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
         imprime_cjt(mundo->herois[i].habilidades_heroi);
     }
 
-    /* informacoes sobre missoes */
-    int missao_cumprida = 0;
-    int min_tentativas = 987654321;
-    int max_tentativas = 0;
-    int total_tentativas = 0;
-
+    /* Informações sobre missões */
     for (i = 0; i < mundo->n_missoes; i++)
     {
-        if (contido_cjt(mundo->missoes[i].habilidades, mundo->bases[i].presentes)) /* se as habilidades dos presentes na base contem as habilidades da missao */
+        if (mundo->missoes[i].cumprida)
             missao_cumprida++;
+        
         if (mundo->missoes[i].tentativas < min_tentativas)
             min_tentativas = mundo->missoes[i].tentativas;
         if (mundo->missoes[i].tentativas > max_tentativas)
@@ -686,12 +687,16 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
         total_tentativas += mundo->missoes[i].tentativas;
     }
 
-    printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, (float)missao_cumprida / mundo->n_missoes * 100);
-    printf("TENTATIVAS/MISSAO: MIN %d MAX %d MEDIA %.2f\n", min_tentativas, max_tentativas, (float)total_tentativas / mundo->n_missoes);
+    printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, 
+           (float)missao_cumprida / mundo->n_missoes * 100);
+    printf("TENTATIVAS/MISSAO: MIN %d MAX %d MEDIA %.2f\n", min_tentativas, max_tentativas, 
+           (float)total_tentativas / mundo->n_missoes);
 
+    /* Destrói a lista de eventos */
     destroi_lef(*lista_de_eventos);
     *lista_de_eventos = NULL;
 }
+
 
 /* MAIN ------------------------------------------------------------------------ */
 int main()
