@@ -517,7 +517,7 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
 {
     /* O herói H se desloca para uma base D (que pode ser a mesma onde já está) */
     struct heroi heroi = mundo->herois[IDHeroi];
-    struct base base = mundo->bases[heroi.base_atual]; /* erro */
+    struct base base = mundo->bases[heroi.base_atual];
     int IDBaseDestino = aleat(0, mundo->n_bases - 1);
     struct base base_destino = mundo->bases[IDBaseDestino];
 
@@ -560,7 +560,7 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
  ou
 %6d: MISSAO %d IMPOSSIVEL
 */
-void evento_missao(int IDMissao, struct mundo *mundo, struct missao *missao)
+void evento_missao(int IDMissao, struct mundo *mundo)
 {
     int i;
     mundo->missoes[IDMissao].tentativas++;
@@ -690,6 +690,8 @@ int main()
     /* ciclo da simulação */
     while (lista_de_eventos)
     {
+        int IDBase, IDHeroi;
+        IDBase = IDHeroi = 0;
         struct evento_t *evento;
         evento = retira_lef(lista_de_eventos);
         mundo->tempo_atual = evento->tempo;
@@ -715,7 +717,7 @@ int main()
             evento_entra(evento->dado1, evento->dado2, mundo, lista_de_eventos);
             break;
         case VIAJA:
-            evento_viaja(evento->dado1, mundo, lista_de_eventos);
+            evento_viaja(IDHeroi, mundo, lista_de_eventos);
             break;
         case MISSAO:
             evento_missao(evento->dado1, mundo);
