@@ -518,25 +518,41 @@ cria e insere na LEF o evento CHEGA (agora + duração, H, D)
 saída:
 %6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d
 */
-void evento_viaja(int IDHeroi, int IDMissao, struct mundo *mundo, struct lef_t *lista_de_eventos)
+void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int IDBaseDestino = IDMissao; /* escolhe uma base destino D aleatória */
+    int dist, duracao, IDBaseDestino;
+    dist = duracao = 0;
 
-    int dist = distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX, mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
-                         mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY); /* distância cartesiana entre a base atual de H e a base D */
+    IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
+    int base_atual = mundo->herois[IDHeroi].base_atual;
 
-    int duracao = dist / mundo->herois[IDHeroi].velocidade; /* duração = distância / velocidade de H */
+    /* cálculo da duracao da viagem se a base destino for diferente da base atual */
+    if (IDBaseDestino != base_atual)
+    {
+        /* distância = distância cartesiana entre a base atual de H e a base D */
+        dist = distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX,
+                         mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
+                         mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY);
 
-    struct evento_t *chega = cria_evento(mundo->tempo_atual + duracao, CHEGA, IDHeroi, IDBaseDestino); /* cria e insere na LEF o evento CHEGA (agora + duração, H, D) */
+        /* duração = distância / velocidade de H */
+        duracao = dist / mundo->herois[IDHeroi].velocidade;
+    }
 
-    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n", mundo->tempo_atual, IDHeroi, mundo->herois[IDHeroi].base_atual, IDBaseDestino, dist, mundo->herois[IDHeroi].velocidade, mundo->tempo_atual + duracao);
+    /* cria o evento CHEGA (agora + duração, H, D) */
+    struct evento_t *chega;
+    chega = cria_evento(mundo->tempo_atual + duracao, CHEGA, IDHeroi, IDBaseDestino);
+
+    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
+           mundo->tempo_atual, IDHeroi, mundo->herois[IDHeroi].base_atual, IDBaseDestino,
+           dist, mundo->herois[IDHeroi].velocidade, mundo->tempo_atual + duracao);
 
     if (!chega)
     {
-        fprintf(stderr, "Erro ao criar evento de chega\n");
+        fprintf(stderr, "Erro ao criar evento CHEGA\n");
         destroi_evento(chega);
         exit(EXIT_FAILURE);
     }
+
     insere_lef(lista_de_eventos, chega); /* insere na LEF o evento CHEGA */
 }
 
@@ -559,16 +575,13 @@ void evento_missao(int IDMissao, struct mundo *mundo)
             tentativas_por_missao++;
     }
 
-    printf("%6d: MISSAO %d TENT %d HAB REQ: [ ", mundo->tempo_atual, IDMissao, tentativas_por_missao);
-    imprime_cjt(mundo->missoes->habilidades);
-    printf(" ]\n");
+    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, tentativas_por_missao);
+    imprime_cjt(mundo->missoes[IDMissao].habilidades);
 
     struct base base_encontrada;
-    struct conjunto *equipe;
-    /* escolher a menor equipe */
-    equipe = escolhe_menor_equipe(*mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
+    struct conjunto *equipe = escolhe_menor_equipe(*mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
 
-    if (!(equipe))
+    if (!equipe)
     {
         fprintf(stderr, "Erro ao escolher equipe\n");
         exit(EXIT_FAILURE);
@@ -576,25 +589,25 @@ void evento_missao(int IDMissao, struct mundo *mundo)
 
     if (vazio_cjt(equipe))
     {
-        printf("]\n%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        printf("\n%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        destroi_cjt(equipe);
         return;
     }
 
-    printf("]\n%6d: MISSAO %d BASE %d DIST %d HEROIS [ ", mundo->tempo_atual, IDMissao, base_encontrada.ID_base, distancia(mundo->missoes[IDMissao].localX, mundo->missoes[IDMissao].localY, base_encontrada.localX, base_encontrada.localY));
+    printf("%6d: MISSAO %d BASE %d DIST %d HEROIS [", mundo->tempo_atual, IDMissao, base_encontrada.ID_base, distancia(mundo->missoes[IDMissao].localX, mundo->missoes[IDMissao].localY, base_encontrada.localX, base_encontrada.localY));
 
+    inicia_iterador_cjt(equipe);
+    int IDHeroi;
     for (i = 0; i < cardinalidade_cjt(equipe); i++)
     {
-        int IDHeroi = 0;
-        inicia_iterador_cjt(equipe);
         incrementa_iterador_cjt(equipe, &IDHeroi);
         printf("%d ", IDHeroi);
     }
     printf("]\n");
 
+    inicia_iterador_cjt(equipe);
     for (i = 0; i < cardinalidade_cjt(equipe); i++)
     {
-        int IDHeroi = 0;
-        inicia_iterador_cjt(equipe);
         incrementa_iterador_cjt(equipe, &IDHeroi);
         printf("%6d: MISSAO %d HAB HEROI %2d: [ ", mundo->tempo_atual, IDMissao, IDHeroi);
         imprime_cjt(mundo->herois[IDHeroi].habilidades_heroi);
@@ -602,10 +615,9 @@ void evento_missao(int IDMissao, struct mundo *mundo)
     }
 
     struct conjunto *uniao = cria_cjt(mundo->n_habilidades);
+    inicia_iterador_cjt(equipe);
     for (i = 0; i < cardinalidade_cjt(equipe); i++)
     {
-        int IDHeroi = 0;
-        inicia_iterador_cjt(equipe);
         incrementa_iterador_cjt(equipe, &IDHeroi);
         uniao = uniao_cjt(uniao, mundo->herois[IDHeroi].habilidades_heroi);
     }
@@ -617,13 +629,18 @@ void evento_missao(int IDMissao, struct mundo *mundo)
     if (contido_cjt(mundo->missoes[IDMissao].habilidades, uniao))
     {
         printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
+        destroi_cjt(mundo->missoes[IDMissao].habilidades);
         mundo->missoes[IDMissao].habilidades = uniao;
     }
     else
     {
         printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        destroi_cjt(uniao);
     }
+
+    destroi_cjt(equipe);
 }
+
 
 /*
 FIM (T):
@@ -676,6 +693,7 @@ int main()
 
     mundo->tempo_atual = T_INICIO; /* tempo atual do mundo */
 
+    
     /* ciclo da simulação
     while (lista_de_eventos)
     {
