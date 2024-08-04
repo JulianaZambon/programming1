@@ -416,12 +416,15 @@ cria e insere na LEF o evento AVISA (agora, B)
 */
 void evento_sai(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int IDBaseDestino = aleat(0, mundo->n_bases - 1);                                        /* escolhe uma base destino D aleatória */
+    /* escolhe uma base destino D aleatória */
+    int IDBaseDestino = aleat(0, mundo->n_bases - 1);
+
     retira_cjt(mundo->bases[IDBase].presentes, IDHeroi);                                     /* retira H do conjunto de heróis presentes em B */
     struct evento_t *viaja = cria_evento(mundo->tempo_atual, VIAJA, IDHeroi, IDBaseDestino); /* cria e insere na LEF o evento VIAJA (agora, H, D) */
     struct evento_t *avisa = cria_evento(mundo->tempo_atual, AVISA, IDHeroi, IDBase);        /* cria e insere na LEF o evento AVISA (agora, B) */
 
-    printf("%6d: SAI    HEROI %2d BASE %d (%2d/%2d)\n", mundo->tempo_atual, IDHeroi, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
+    printf("%6d: SAI    HEROI %2d BASE %d (%2d/%2d)\n", mundo->tempo_atual, IDHeroi,
+           IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
 
     if (!viaja)
     {
@@ -499,7 +502,7 @@ void evento_entra(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *li
 
     if (!sai)
     {
-        fprintf(stderr, "Erro ao criar evento de sai\n");
+        fprintf(stderr, "Erro ao criar evento SAI\n");
         destroi_evento(sai);
         exit(EXIT_FAILURE);
     }
@@ -520,41 +523,57 @@ saída:
 */
 void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int dist, duracao, IDBaseDestino;
-    dist = duracao = 0;
-
-    IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
+    int dist = 0, duracao = 0, IDBaseDestino;
     int base_atual = mundo->herois[IDHeroi].base_atual;
+
+    /* O herói H se desloca para uma base D (que pode ser a mesma onde já está) */
+    IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
+    
+    /* Verificação adicional para garantir valores válidos */
+    if (IDBaseDestino < 0 || IDBaseDestino >= mundo->n_bases) {
+        fprintf(stderr, "Base destino inválida\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (base_atual < 0 || base_atual >= mundo->n_bases) {
+        fprintf(stderr, "Base atual inválida\n");
+        exit(EXIT_FAILURE);
+    }
 
     /* cálculo da duracao da viagem se a base destino for diferente da base atual */
     if (IDBaseDestino != base_atual)
     {
         /* distância = distância cartesiana entre a base atual de H e a base D */
-        dist = distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX,
-                         mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
+        dist = distancia(mundo->bases[base_atual].localX,
+                         mundo->bases[base_atual].localY,
                          mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY);
 
         /* duração = distância / velocidade de H */
-        duracao = dist / mundo->herois[IDHeroi].velocidade;
+        if (mundo->herois[IDHeroi].velocidade > 0) {
+            duracao = dist / mundo->herois[IDHeroi].velocidade;
+        } else {
+            fprintf(stderr, "Velocidade do herói inválida\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     /* cria o evento CHEGA (agora + duração, H, D) */
-    struct evento_t *chega;
-    chega = cria_evento(mundo->tempo_atual + duracao, CHEGA, IDHeroi, IDBaseDestino);
-
-    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
-           mundo->tempo_atual, IDHeroi, mundo->herois[IDHeroi].base_atual, IDBaseDestino,
-           dist, mundo->herois[IDHeroi].velocidade, mundo->tempo_atual + duracao);
+    struct evento_t *chega = cria_evento(mundo->tempo_atual + duracao, CHEGA, IDHeroi, IDBaseDestino);
 
     if (!chega)
     {
         fprintf(stderr, "Erro ao criar evento CHEGA\n");
-        destroi_evento(chega);
         exit(EXIT_FAILURE);
     }
 
     insere_lef(lista_de_eventos, chega); /* insere na LEF o evento CHEGA */
+
+    /* SAÍDA */
+    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
+           mundo->tempo_atual, IDHeroi, base_atual, IDBaseDestino,
+           dist, mundo->herois[IDHeroi].velocidade, mundo->tempo_atual + duracao);
 }
+
 
 /*
 %6d: MISSAO %d TENT %d HAB REQ: [ %d %d ... ]
@@ -641,7 +660,6 @@ void evento_missao(int IDMissao, struct mundo *mundo)
     destroi_cjt(equipe);
 }
 
-
 /*
 FIM (T):
   apresenta as experiências dos heróis
@@ -693,7 +711,8 @@ int main()
 
     mundo->tempo_atual = T_INICIO; /* tempo atual do mundo */
 
-    
+    evento_viaja(0, mundo, lista_de_eventos);
+
     /* ciclo da simulação
     while (lista_de_eventos)
     {
