@@ -422,7 +422,7 @@ void evento_sai(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *list
 
     if (!viaja)
     {
-        fprintf(stderr, "Erro ao criar evento de viaja\n");
+        fprintf(stderr, "Erro ao criar evento VIAJA \n");
         destroi_evento(viaja);
         exit(EXIT_FAILURE);
     }
@@ -430,7 +430,7 @@ void evento_sai(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *list
 
     if (!avisa)
     {
-        fprintf(stderr, "Erro ao criar evento de avisa\n");
+        fprintf(stderr, "Erro ao criar evento AVISA \n");
         destroi_evento(avisa);
         exit(EXIT_FAILURE);
     }
