@@ -591,7 +591,7 @@ void evento_missao(int IDMissao, struct mundo *mundo)
 
     if (vazio_cjt(equipe))
     {
-        printf("\n%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
         destroi_cjt(equipe);
         return;
     }
@@ -684,8 +684,8 @@ int main()
 {
     srand(time(0));
 
-    struct mundo *mundo = inicializa_mundo();    /* inicializa o mundo */
     struct lef_t *lista_de_eventos = cria_lef(); /* cria a lista de eventos futuros */
+    struct mundo *mundo = inicializa_mundo();    /* inicializa o mundo */
 
     if (!(mundo) || !(lista_de_eventos))
         exit(EXIT_FAILURE);
@@ -694,54 +694,43 @@ int main()
 
     mundo->tempo_atual = T_INICIO; /* tempo atual do mundo */
 
-    evento_viaja(0, mundo, lista_de_eventos);
-
-    /* ciclo da simulação
+    /* ciclo da simulação 
     while (lista_de_eventos)
     {
-        struct evento_t *evento_atual = retira_lef(lista_de_eventos);
+        struct evento_t *evento = retira_lef(lista_de_eventos); 
+        mundo->tempo_atual = evento->tempo;                         
 
-        mundo->tempo_atual = evento_atual->tempo;
-
-        switch (evento_atual->tipo)
+        switch (evento->tipo)
         {
         case CHEGA:
-            evento_chega(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
+            evento_chega(evento->dado1, evento->dado2, mundo, lista_de_eventos);
             break;
-
-            case ESPERA:
-                evento_espera(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-                break;
-
-            case DESISTE:
-                evento_desiste(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-                break;
-
-            case SAI:
-                evento_sai(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-                break;
-
-            case AVISA:
-                evento_avisa(evento_atual->dado1, mundo, lista_de_eventos);
-                break;
-
-            case ENTRA:
-                evento_entra(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-                break;
-
-            case VIAJA:
-                evento_viaja(evento_atual->dado1, evento_atual->dado2, mundo, lista_de_eventos);
-                break;
-
-            case MISSAO:
-                evento_missao(evento_atual->dado1, mundo);
-                break;
-
-            case FIM:
-                evento_fim(mundo, &lista_de_eventos);
-                break;
+        case ESPERA:
+            evento_espera(evento->dado1, evento->dado2, mundo, lista_de_eventos);
+            break;
+        case DESISTE:
+            evento_desiste(evento->dado1, evento->dado2, mundo, lista_de_eventos);
+            break;
+        case SAI:
+            evento_sai(evento->dado1, evento->dado2, mundo, lista_de_eventos);
+            break;
+        case AVISA:
+            evento_avisa(evento->dado1, mundo, lista_de_eventos);
+            break;
+        case ENTRA:
+            evento_entra(evento->dado1, evento->dado2, mundo, lista_de_eventos);
+            break;
+        case VIAJA:
+            evento_viaja(evento->dado1, mundo, lista_de_eventos);
+            break;
+        case MISSAO:
+            evento_missao(evento->dado1, mundo);
+            break;
+        case FIM:
+            evento_fim(mundo, &lista_de_eventos);
+            break;
         }
-        destroi_evento(evento_atual);
+        destroi_evento(evento); 
     }*/
 
     destroi_lef(lista_de_eventos); /* destroi a lista de eventos */
