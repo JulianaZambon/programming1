@@ -54,8 +54,8 @@ struct missao
     struct conjunto *habilidades; /* conjunto de habilidades necessarias para a missao */
     int localX;                   /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
     int localY;
-    int tentativas;               /* num de tentativas para cumprir a missao */
-    bool cumprida;                 /* indica se a missao foi cumprida ou nao */
+    int tentativas; /* num de tentativas para cumprir a missao */
+    bool cumprida;  /* indica se a missao foi cumprida ou nao */
 };
 
 /* definido pelas entidades acima*/
@@ -133,7 +133,7 @@ struct conjunto *escolhe_menor_equipe(struct conjunto missao, int ID_missao, str
         if (!(uniao = copia_cjt(mundo->herois[ID_heroi_atual].habilidades_heroi)))
             return NULL;
 
-        /* faz a uniao entre os conjutnos de habilidades de todos os herois prsentes na base atual*/
+        /* faz a uniao entre os conjuntos de habilidades de todos os herois prsentes na base atual*/
         for (j = 1; j < cardinalidade_cjt(mundo->bases[i].presentes); j++)
         {
             antiga_uniao = uniao;
@@ -551,83 +551,71 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
 
     insere_lef(lista_de_eventos, chega);
 }
+
 /*
-%6d: MISSAO %d TENT %d HAB REQ: [ %d %d ... ]
-%6d: MISSAO %d BASE %d DIST %d HEROIS [ %d %d ... ]
-%6d: MISSAO %d HAB HEROI %2d: [ %d ... ]
-%6d: MISSAO %d UNIAO HAB BASE %d: [ %d %d ... ]
-%6d: MISSAO %d CUMPRIDA BASE %d
- ou
-%6d: MISSAO %d IMPOSSIVEL
+MISSAO (T, M):
+calcula a distância de cada base ao local da missão M
+encontra BMP = base mais próxima da missão cujos heróis possam cumpri-la
+se houver uma BMP:
+    incrementa a experiência dos heróis presentes na base BMP
+senão:
+    cria e insere na LEF o evento MISSAO (T + 24*60, M) para o dia seguinte
 */
-void evento_missao(int IDMissao, struct mundo *mundo)
+
+void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento)
 {
     int i;
-    mundo->missoes[IDMissao].tentativas++;
+    struct evento_t *evento;
+    struct missao missao = mundo->missoes[IDMissao];
+    struct base *base_mais_proxima = NULL;
+    int menor_distancia = 987654321; /* valor grande para representar infinito */
 
-    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, mundo->missoes[IDMissao].tentativas);
-    imprime_cjt(mundo->missoes[IDMissao].habilidades);
+    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, missao.tentativas);
+    imprime_cjt(missao.habilidades);
 
-    struct base base_encontrada;
-    struct conjunto *equipe = escolhe_menor_equipe(*mundo->missoes[IDMissao].habilidades, IDMissao, mundo, &base_encontrada);
+    /* percorre todas as bases para encontrar a base mais próxima */
+    for (i = 0; i < mundo->n_bases; i++) {
+        int dist = distancia(mundo->bases[i].localX, mundo->bases[i].localY, missao.localX, missao.localY);
 
-    if (!equipe)
-    {
-        fprintf(stderr, "Erro ao escolher equipe\n");
-        exit(EXIT_FAILURE);
+        if (dist < menor_distancia) {
+            menor_distancia = dist;
+            base_mais_proxima = &mundo->bases[i];
+        }
     }
 
-    if (vazio_cjt(equipe))
-    {
+    if (base_mais_proxima) {
+        printf("%6d: MISSAO %d BASE %d DIST %d HEROIS [", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base, menor_distancia);
+        inicia_iterador_cjt(base_mais_proxima->presentes);
+        int IDHeroi;
+        while (incrementa_iterador_cjt(base_mais_proxima->presentes, &IDHeroi)) {
+            printf("%d ", IDHeroi);
+        }
+        printf("]\n");
+
+        struct conjunto *equipe = escolhe_menor_equipe(*missao.habilidades, IDMissao, mundo, base_mais_proxima);
+        if (equipe) {
+            printf("%6d: MISSAO %d HAB HEROI %2d: ", mundo->tempo_atual, IDMissao, IDHeroi);
+            imprime_cjt(equipe); /* imprime as habilidades da equipe */
+
+            printf("%6d: MISSAO %d UNIAO HAB BASE %d: ", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base);
+            imprime_cjt(base_mais_proxima->presentes);
+
+            /* incrementa a experiência dos heróis */
+            inicia_iterador_cjt(base_mais_proxima->presentes);
+            while (incrementa_iterador_cjt(base_mais_proxima->presentes, &IDHeroi)) {
+                mundo->herois[IDHeroi].experiencia++;
+            }
+            printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base);
+        } else {
+            /* Se não houver equipe disponível, reagenda a missão para o dia seguinte */
+            cria_evento(mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, evento->dado2);
+            printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        }
+    } else {
+        /* Se não houver base mais próxima, reagenda a missão para o dia seguinte */
+        cria_evento(mundo->tempo_atual + 24 * 60, 1, MISSAO, evento->dado2);
         printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
-        destroi_cjt(equipe);
-        return;
     }
-
-    printf("%6d: MISSAO %d BASE %d DIST %d HEROIS [", mundo->tempo_atual, IDMissao, base_encontrada.ID_base, distancia(mundo->missoes[IDMissao].localX, mundo->missoes[IDMissao].localY, base_encontrada.localX, base_encontrada.localY));
-
-    inicia_iterador_cjt(equipe);
-    int IDHeroi;
-    for (i = 0; i < cardinalidade_cjt(equipe); i++)
-    {
-        incrementa_iterador_cjt(equipe, &IDHeroi);
-        printf("%d ", IDHeroi);
-    }
-    printf("]\n");
-
-    inicia_iterador_cjt(equipe);
-    for (i = 0; i < cardinalidade_cjt(equipe); i++)
-    {
-        incrementa_iterador_cjt(equipe, &IDHeroi);
-        printf("%6d: MISSAO %d HAB HEROI %2d: ", mundo->tempo_atual, IDMissao, IDHeroi);
-        imprime_cjt(mundo->herois[IDHeroi].habilidades_heroi);
-    }
-
-    struct conjunto *uniao = cria_cjt(mundo->n_habilidades);
-    inicia_iterador_cjt(equipe);
-    for (i = 0; i < cardinalidade_cjt(equipe); i++)
-    {
-        incrementa_iterador_cjt(equipe, &IDHeroi);
-        uniao = uniao_cjt(uniao, mundo->herois[IDHeroi].habilidades_heroi);
-    }
-
-    printf("%6d: MISSAO %d UNIAO HAB BASE %d: ", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
-    imprime_cjt(uniao);
-
-    if (contido_cjt(mundo->missoes[IDMissao].habilidades, uniao))
-    {
-        mundo->missoes[IDMissao].cumprida = true;
-        printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
-        destroi_cjt(mundo->missoes[IDMissao].habilidades);
-        mundo->missoes[IDMissao].habilidades = uniao;
-    }
-    else
-    {
-        printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
-        destroi_cjt(uniao);
-    }
-
-    destroi_cjt(equipe);
 }
 
 /*
@@ -653,7 +641,8 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     int max_tentativas = 0;
     int total_tentativas = 0;
 
-    for (i = 0; i < mundo->n_missoes; i++) {
+    for (i = 0; i < mundo->n_missoes; i++)
+    {
         if (contido_cjt(mundo->missoes[i].habilidades, mundo->missoes[i].habilidades))
             missao_cumprida++;
         if (mundo->missoes[i].tentativas < min_tentativas)
@@ -690,8 +679,6 @@ int main()
     /* ciclo da simulação */
     while (lista_de_eventos)
     {
-        int IDBase, IDHeroi;
-        IDBase = IDHeroi = 0;
         struct evento_t *evento;
         evento = retira_lef(lista_de_eventos);
         mundo->tempo_atual = evento->tempo;
@@ -711,16 +698,16 @@ int main()
             evento_sai(evento->dado1, evento->dado2, mundo, lista_de_eventos);
             break;
         case AVISA:
-            evento_avisa(IDBase, mundo, lista_de_eventos);
+            evento_avisa(evento->dado2, mundo, lista_de_eventos);
             break;
         case ENTRA:
             evento_entra(evento->dado1, evento->dado2, mundo, lista_de_eventos);
             break;
         case VIAJA:
-            evento_viaja(IDHeroi, mundo, lista_de_eventos);
+            evento_viaja(evento->dado1, mundo, lista_de_eventos);
             break;
         case MISSAO:
-            evento_missao(evento->dado1, mundo);
+            evento_missao(evento->dado1, mundo, lista_de_eventos);
             break;
         case FIM:
             evento_fim(mundo, &lista_de_eventos);
