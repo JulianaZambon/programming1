@@ -706,7 +706,7 @@ int main()
             evento_viaja(evento->dado1, mundo, lista_de_eventos);
             break;
         case MISSAO:
-            evento_missao(evento->dado1, mundo, lista_de_eventos);
+            evento_missao(evento->dado1, mundo, evento);
             break;
         case FIM:
             evento_fim(mundo, &lista_de_eventos);
