@@ -658,7 +658,7 @@ FIM (T):
   apresenta as estatísticas das missões
   encerra a simulação
 */
-void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
+void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos, int IDMissao)
 {
     int i;
     int missao_cumprida = 0;
@@ -666,7 +666,22 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     int max_tentativas = 0;
     int total_tentativas = 0;
 
-    /* Informações sobre heróis */
+
+    for (i = 0; i < mundo->n_missoes; i++)
+    {
+        if (mundo->missoes[IDMissao].cumprida) /* se a missão foi cumprida */
+        {
+            missao_cumprida++; /* incrementa o número de missões cumpridas */
+            total_tentativas += mundo->missoes[IDMissao].tentativas; /* incrementa o total de tentativas */
+
+            if (mundo->missoes[IDMissao].tentativas < min_tentativas) 
+                min_tentativas = mundo->missoes[IDMissao].tentativas;
+            if (mundo->missoes[IDMissao].tentativas > max_tentativas) 
+                max_tentativas = mundo->missoes[IDMissao].tentativas;
+        }
+    }
+
+    /* informações sobre os heróis */
     for (i = 0; i < mundo->n_herois; i++)
     {
         printf("HEROI %2d PAC %2d VEL %d EXP %d HABS ", i, mundo->herois[i].paciencia,
@@ -674,28 +689,20 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
         imprime_cjt(mundo->herois[i].habilidades_heroi);
     }
 
-    /* Informações sobre missões */
-    for (i = 0; i < mundo->n_missoes; i++)
-    {
-        if (mundo->missoes[i].cumprida)
-            missao_cumprida++;
-        
-        if (mundo->missoes[i].tentativas < min_tentativas)
-            min_tentativas = mundo->missoes[i].tentativas;
-        if (mundo->missoes[i].tentativas > max_tentativas)
-            max_tentativas = mundo->missoes[i].tentativas;
-        total_tentativas += mundo->missoes[i].tentativas;
-    }
+    /* para garantir que não haja divisão por zero */
+    float media_tentativas = missao_cumprida > 0 ? (float)total_tentativas / missao_cumprida : 0;
 
-    printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, 
-           (float)missao_cumprida / mundo->n_missoes * 100);
-    printf("TENTATIVAS/MISSAO: MIN %d MAX %d MEDIA %.2f\n", min_tentativas, max_tentativas, 
-           (float)total_tentativas / mundo->n_missoes);
+    printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", 
+           missao_cumprida, mundo->n_missoes,
+           100.0f * missao_cumprida / mundo->n_missoes);
+    printf("TENTATIVAS/MISSAO: MIN %d MAX %d MEDIA %.2f\n", 
+           min_tentativas, max_tentativas, media_tentativas);
 
-    /* Destrói a lista de eventos */
     destroi_lef(*lista_de_eventos);
     *lista_de_eventos = NULL;
 }
+
+
 
 
 /* MAIN ------------------------------------------------------------------------ */
@@ -749,7 +756,7 @@ int main()
             evento_missao(evento->dado1, mundo, evento, lista_de_eventos);
             break;
         case FIM:
-            evento_fim(mundo, &lista_de_eventos);
+            evento_fim(mundo, &lista_de_eventos, evento->dado1);
             break;
         }
         destroi_evento(evento);
