@@ -565,7 +565,6 @@ senão:
 void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento)
 {
     int i;
-    struct evento_t *evento;
     struct missao missao = mundo->missoes[IDMissao];
     struct base *base_mais_proxima = NULL;
     int menor_distancia = 987654321; /* valor grande para representar infinito */
