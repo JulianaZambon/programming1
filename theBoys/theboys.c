@@ -508,21 +508,10 @@ saída:
 */
 void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    /* inicializa variáveis */
-    if (IDHeroi < 0 || IDHeroi >= mundo->n_herois) {
-        fprintf(stderr, "IDHeroi fora dos limites\n");
-        exit(EXIT_FAILURE);
-    }
-
     struct heroi *heroi = &mundo->herois[IDHeroi];
     struct base *base_atual = &mundo->bases[heroi->base_atual];
     int IDBaseDestino = aleat(0, mundo->n_bases - 1);
     struct base *base_destino = &mundo->bases[IDBaseDestino];
-
-    if (heroi->velocidade <= 0) {
-        fprintf(stderr, "Velocidade do heroi deve ser maior que zero\n");
-        exit(EXIT_FAILURE);
-    }
 
     int dist = 0;
     int duracao = 0;
@@ -544,7 +533,7 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
     }
 
     printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
-           mundo->tempo_atual, IDHeroi, base_atual->ID_base, base_destino->ID_base, dist, heroi->velocidade, tempo_chega);
+           mundo->tempo_atual, IDHeroi, base_atual->ID_base, base_destino->ID_base, dist, velocidade, tempo_chega);
 
     insere_lef(lista_de_eventos, chega);
     heroi->base_atual = IDBaseDestino;
