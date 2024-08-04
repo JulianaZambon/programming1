@@ -508,41 +508,47 @@ saída:
 */
 void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    int dist = 0, duracao = 0, IDBaseDestino;
-    int base_atual = mundo->herois[IDHeroi].base_atual;
-
-    IDBaseDestino = aleat(0, mundo->n_bases - 1); /* escolhe uma base destino D aleatória */
-
-    /* cálculo da duracao da viagem se a base destino for diferente da base atual */
-    if (IDBaseDestino != base_atual)
-    {
-        /* distância = distância cartesiana entre a base atual de H e a base D */
-        dist = distancia(mundo->bases[mundo->herois[IDHeroi].base_atual].localX,
-                         mundo->bases[mundo->herois[IDHeroi].base_atual].localY,
-                         mundo->bases[IDBaseDestino].localX, mundo->bases[IDBaseDestino].localY);
-
-        /* duração = distância / velocidade de H */
-        duracao = dist / mundo->herois[IDHeroi].velocidade;
-    }
-
-    /* cria o evento CHEGA (agora + duração, H, D) */
-    struct evento_t *chega;
-    chega = cria_evento(mundo->tempo_atual + duracao, CHEGA, IDHeroi, IDBaseDestino);
-
-    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
-           mundo->tempo_atual, IDHeroi, mundo->herois[IDHeroi].base_atual, IDBaseDestino,
-           dist, mundo->herois[IDHeroi].velocidade, mundo->tempo_atual + duracao);
-
-    if (!chega)
-    {
-        fprintf(stderr, "Erro ao criar evento CHEGA\n");
-        destroi_evento(chega);
+    /* inicializa variáveis */
+    if (IDHeroi < 0 || IDHeroi >= mundo->n_herois) {
+        fprintf(stderr, "IDHeroi fora dos limites\n");
         exit(EXIT_FAILURE);
     }
 
-    insere_lef(lista_de_eventos, chega); /* insere na LEF o evento CHEGA */
-}
+    struct heroi *heroi = &mundo->herois[IDHeroi];
+    struct base *base_atual = &mundo->bases[heroi->base_atual];
+    int IDBaseDestino = aleat(0, mundo->n_bases - 1);
+    struct base *base_destino = &mundo->bases[IDBaseDestino];
 
+    if (heroi->velocidade <= 0) {
+        fprintf(stderr, "Velocidade do heroi deve ser maior que zero\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int dist = 0;
+    int duracao = 0;
+    int velocidade = heroi->velocidade;
+
+    if (base_destino != base_atual) {
+        dist = distancia(base_atual->localX, base_atual->localY, base_destino->localX, base_destino->localY);
+        duracao = dist / velocidade;
+    }
+
+    int tempo_chega = mundo->tempo_atual + duracao;
+
+    struct evento_t *chega;
+    chega = cria_evento(tempo_chega, CHEGA, IDHeroi, IDBaseDestino);
+
+    if (!chega) {
+        fprintf(stderr, "Erro ao criar evento CHEGA\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
+           mundo->tempo_atual, IDHeroi, base_atual->ID_base, base_destino->ID_base, dist, heroi->velocidade, tempo_chega);
+
+    insere_lef(lista_de_eventos, chega);
+    heroi->base_atual = IDBaseDestino;
+}
 /*
 %6d: MISSAO %d TENT %d HAB REQ: [ %d %d ... ]
 %6d: MISSAO %d BASE %d DIST %d HEROIS [ %d %d ... ]
@@ -671,19 +677,23 @@ int main()
 
     struct lef_t *lista_de_eventos = cria_lef(); /* cria a lista de eventos futuros */
     struct mundo *mundo = inicializa_mundo();    /* inicializa o mundo */
+   
 
     if (!(mundo) || !(lista_de_eventos))
         exit(EXIT_FAILURE);
 
     inicializa_eventos_iniciais(mundo, lista_de_eventos); /* inicializa os eventos iniciais */
 
-    mundo->tempo_atual = T_INICIO; 
+    mundo->tempo_atual = T_INICIO;
+
+    evento_viaja(15, mundo, lista_de_eventos);
 
     /* ciclo da simulação 
     while (lista_de_eventos)
     {
-        struct evento_t *evento = retira_lef(lista_de_eventos); 
-        mundo->tempo_atual = evento->tempo;                         
+        struct evento_t *evento;
+        evento = retira_lef(lista_de_eventos); 
+        mundo->tempo_atual = evento->tempo;   
 
         switch (evento->tipo)
         {
@@ -715,7 +725,7 @@ int main()
             evento_fim(mundo, &lista_de_eventos);
             break;
         }
-        destroi_evento(evento); 
+        destroi_evento(evento);
     }*/
 
     destroi_lef(lista_de_eventos); /* destroi a lista de eventos */
