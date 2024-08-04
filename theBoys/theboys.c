@@ -110,7 +110,8 @@ int velocidade_heroi()
     return aleat(50, 5000); /* velocidade em metros por minuto = 3Km/h a 300Km/h */
 }
 
-struct conjunto *escolhe_menor_equipe(struct conjunto missao, int ID_missao, struct mundo *mundo, struct base *base_encontrada)
+/* encontra a base mais proxima que pode cumprir a missao */
+struct conjunto *escolhe_equipe_mais_proxima(struct mundo *mundo, int ID_missao, struct base *base_encontrada)
 {
     struct conjunto *menor;
     if (!(menor = cria_cjt(mundo->n_habilidades)))
@@ -145,18 +146,26 @@ struct conjunto *escolhe_menor_equipe(struct conjunto missao, int ID_missao, str
         printf("%6d:MISSAO %3d HAB_EQL %d:", mundo->tempo_atual, ID_missao, mundo->bases[i].ID_base);
         imprime_cjt(uniao);
 
-        /* compara se o conjunto construido contem a missao e se eh menor que o encontrado antes */
-        if (contido_cjt(&missao, uniao))
+        /* compara se a base da equipe é mais proxima do que a base anterior */
+        if (distancia(mundo->bases[i].localX, mundo->bases[i].localY, mundo->missoes[ID_missao].localX,
+                      mundo->missoes[ID_missao].localY) < distancia(base_encontrada->localX, base_encontrada->localY,
+                                                                    mundo->missoes[ID_missao].localX, mundo->missoes[ID_missao].localY))
         {
-            if (vazio_cjt(menor) || cardinalidade_cjt(uniao) < cardinalidade_cjt(menor))
+            base_encontrada = &mundo->bases[i];
+            menor = destroi_cjt(menor);
+            menor = copia_cjt(uniao);
+        }
+        else if (distancia(mundo->bases[i].localX, mundo->bases[i].localY, mundo->missoes[ID_missao].localX,
+                           mundo->missoes[ID_missao].localY) == distancia(base_encontrada->localX, base_encontrada->localY,
+                                                                          mundo->missoes[ID_missao].localX, mundo->missoes[ID_missao].localY))
+        {
+            if (cardinalidade_cjt(uniao) < cardinalidade_cjt(menor))
             {
+                base_encontrada = &mundo->bases[i];
                 menor = destroi_cjt(menor);
-                if (!(menor = copia_cjt(uniao)))
-                    return NULL;
-                *base_encontrada = mundo->bases[i];
+                menor = copia_cjt(uniao);
             }
         }
-        uniao = destroi_cjt(uniao);
     }
     return menor;
 }
@@ -565,70 +574,81 @@ senão:
 void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento, struct lef_t *lista_de_eventos)
 {
     int i;
-    mundo->missoes[IDMissao].tentativas++;
+    int IDBaseMaisProxima = -1;
+    int dist = 0;
+    int menor_dist = 987654321;
+    struct base *base_encontrada = NULL;
+    struct conjunto *habilidades_equipe_mais_proxima = NULL;
 
-    struct missao missao = mundo->missoes[IDMissao];
-    struct base *base_mais_proxima = NULL;
-    int menor_distancia = 987654321; /* valor grande para representar infinito */
-
-    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, mundo->missoes[IDMissao].tentativas);
-    imprime_cjt(missao.habilidades);
-
-    /* percorre todas as bases para encontrar a base mais próxima */
+    /* calcula a distância de cada base ao local da missão M */
     for (i = 0; i < mundo->n_bases; i++)
     {
-        int dist = distancia(mundo->bases[i].localX, mundo->bases[i].localY, missao.localX, missao.localY);
-
-        if (dist < menor_distancia)
+        /* encontra BMP = base mais próxima da missão cujos heróis possam cumpri-la */
+        if (contido_cjt(mundo->missoes[IDMissao].habilidades, mundo->bases[i].presentes))
         {
-            menor_distancia = dist;
-            base_mais_proxima = &mundo->bases[i];
+            dist = distancia(mundo->bases[i].localX, mundo->bases[i].localY, mundo->missoes[IDMissao].localX, mundo->missoes[IDMissao].localY);
+            if (dist < menor_dist)
+            {
+                menor_dist = dist;
+                IDBaseMaisProxima = i;
+                base_encontrada = &mundo->bases[i];
+            }
         }
     }
 
-    if (base_mais_proxima)
+    /* se houver uma BMP */
+    if (IDBaseMaisProxima != -1)
     {
-        printf("%6d: MISSAO %d BASE %d DIST %d HEROIS [", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base, menor_distancia);
-        inicia_iterador_cjt(base_mais_proxima->presentes);
-        int IDHeroi;
-        while (incrementa_iterador_cjt(base_mais_proxima->presentes, &IDHeroi))
+        habilidades_equipe_mais_proxima = escolhe_equipe_mais_proxima(mundo, IDMissao, base_encontrada);
+        if (habilidades_equipe_mais_proxima)
         {
-            printf("%d ", IDHeroi);
-        }
-        printf("]\n");
+            /* Imprime a informação da missão e da base */
+            printf("%6d: MISSAO %d TENT %d HAB REQ: ", evento->tempo, IDMissao, mundo->missoes[IDMissao].tentativas);
+            imprime_cjt(mundo->missoes[IDMissao].habilidades);
 
-        struct conjunto *equipe = escolhe_menor_equipe(*missao.habilidades, IDMissao, mundo, base_mais_proxima);
-        if (equipe)
-        {
-            printf("%6d: MISSAO %d HAB HEROI %2d: ", mundo->tempo_atual, IDMissao, IDHeroi);
-            imprime_cjt(equipe); /* imprime as habilidades da equipe */
+            printf("%6d: MISSAO %d BASE %d DIST %d HEROIS ", evento->tempo, IDMissao, IDBaseMaisProxima, menor_dist);
+            imprime_cjt(base_encontrada->presentes);
 
-            printf("%6d: MISSAO %d UNIAO HAB BASE %d: ", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base);
-            imprime_cjt(base_mais_proxima->presentes);
-
-            /* incrementa a experiência dos heróis */
-            inicia_iterador_cjt(base_mais_proxima->presentes);
-            while (incrementa_iterador_cjt(base_mais_proxima->presentes, &IDHeroi))
+            /* Incrementa a experiência dos heróis presentes na base BMP */
+            inicia_iterador_cjt(habilidades_equipe_mais_proxima);
+            int IDHeroi;
+            while (incrementa_iterador_cjt(habilidades_equipe_mais_proxima, &IDHeroi))
             {
-                mundo->herois[IDHeroi].experiencia++;
+                mundo->herois[IDHeroi].experiencia++; /* incrementa a experiência dos heróis presentes na base BMP */
             }
-            printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_mais_proxima->ID_base);
-            missao.cumprida = true;
+            destroi_cjt(habilidades_equipe_mais_proxima);
+
+            /* Imprime a experiência dos heróis após o incremento */
+            printf("%6d: MISSAO %d HAB HEROIS [ ", evento->tempo, IDMissao);
+            inicia_iterador_cjt(base_encontrada->presentes);
+            while (incrementa_iterador_cjt(base_encontrada->presentes, &IDHeroi))
+            {
+                printf("%2d: %d ", IDHeroi, mundo->herois[IDHeroi].experiencia);
+            }
+            destroi_cjt(base_encontrada->presentes);
+            printf("]\n");
+
+            printf("%6d: MISSAO %d UNIAO HAB BASE %d: ", evento->tempo, IDMissao, IDBaseMaisProxima);
+            imprime_cjt(base_encontrada->presentes);
+
+            printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", evento->tempo, IDMissao, IDBaseMaisProxima);
+            mundo->missoes[IDMissao].cumprida = true; /* indica que a missão foi cumprida */
         }
         else
         {
-            /* Se não houver equipe disponível, reagenda a missão para o dia seguinte */
-            cria_evento(mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, evento->dado2);
-            insere_lef(lista_de_eventos, evento);
-            printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+            printf("%6d: MISSAO %d IMPOSSIVEL\n", evento->tempo, IDMissao);
         }
     }
-    else
+    else /* se for IMPOSSÍVEL */
     {
-        /* Se não houver base mais próxima, reagenda a missão para o dia seguinte */
-        cria_evento(mundo->tempo_atual + 24 * 60, 1, MISSAO, evento->dado2);
-        insere_lef(lista_de_eventos, evento);
-        printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
+        /* cria e insere na LEF o evento MISSAO (T + 24*60, M) para o dia seguinte */
+        struct evento_t *missao = cria_evento(mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, 0);
+        if (!missao)
+        {
+            destroi_evento(missao);
+            exit(EXIT_FAILURE);
+        }
+        insere_lef(lista_de_eventos, missao);
     }
 }
 
