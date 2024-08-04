@@ -562,7 +562,7 @@ senão:
     cria e insere na LEF o evento MISSAO (T + 24*60, M) para o dia seguinte
 */
 
-void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento)
+void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento, struct lef_t *lista_de_eventos)
 {
     int i;
     struct missao missao = mundo->missoes[IDMissao];
@@ -608,11 +608,13 @@ void evento_missao(int IDMissao, struct mundo *mundo, struct evento_t *evento)
         } else {
             /* Se não houver equipe disponível, reagenda a missão para o dia seguinte */
             cria_evento(mundo->tempo_atual + 24 * 60, MISSAO, IDMissao, evento->dado2);
+            insere_lef(lista_de_eventos, evento);
             printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
         }
     } else {
         /* Se não houver base mais próxima, reagenda a missão para o dia seguinte */
         cria_evento(mundo->tempo_atual + 24 * 60, 1, MISSAO, evento->dado2);
+        insere_lef(lista_de_eventos, evento);
         printf("%6d: MISSAO %d IMPOSSIVEL\n", mundo->tempo_atual, IDMissao);
     }
 }
@@ -706,7 +708,7 @@ int main()
             evento_viaja(evento->dado1, mundo, lista_de_eventos);
             break;
         case MISSAO:
-            evento_missao(evento->dado1, mundo, evento);
+            evento_missao(evento->dado1, mundo, evento, lista_de_eventos);
             break;
         case FIM:
             evento_fim(mundo, &lista_de_eventos);
