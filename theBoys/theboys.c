@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <stdbool.h>
 #include "conjunto.h"
 #include "lef.h"
 #include "fila.h"
@@ -53,6 +54,8 @@ struct missao
     struct conjunto *habilidades; /* conjunto de habilidades necessarias para a missao */
     int localX;                   /* localizacao da missao (par de coordenadas inteiras X, Y ≥ 0) */
     int localY;
+    int tentativas;               /* num de tentativas para cumprir a missao */
+    bool cumprida;                 /* indica se a missao foi cumprida ou nao */
 };
 
 /* definido pelas entidades acima*/
@@ -253,6 +256,8 @@ struct mundo *inicializa_mundo()
         mundo->missoes[i].localX = aleat(0, mundo->tamanho_do_mundo - 1);
         mundo->missoes[i].localY = aleat(0, mundo->tamanho_do_mundo - 1);
         mundo->missoes[i].habilidades = cria_subcjt_cjt(c, aleat(6, 10));
+        mundo->missoes[i].tentativas = 0;
+        mundo->missoes[i].cumprida = false;
     }
 
     destroi_cjt(c);
@@ -450,9 +455,8 @@ enquanto houver vaga em B e houver heróis esperando na fila:
 */
 void evento_avisa(int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
-    printf("%6d: AVISA  PORTEIRO BASE %d (%2d/%2d) FILA [ ", mundo->tempo_atual, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
+    printf("%6d: AVISA  PORTEIRO BASE %d (%2d/%2d) FILA ", mundo->tempo_atual, IDBase, cardinalidade_cjt(mundo->bases[IDBase].presentes), mundo->bases[IDBase].lotacao);
     fila_imprime(mundo->bases[IDBase].espera);
-    printf("]\n");
 
     while (!fila_vazia(mundo->bases[IDBase].espera) && !base_lotada(IDBase, mundo))
     {
@@ -512,24 +516,24 @@ saída:
 void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
     /* O herói H se desloca para uma base D (que pode ser a mesma onde já está) */
-    struct heroi *heroi = &mundo->herois[IDHeroi];
-    struct base *base_atual = &mundo->bases[heroi->base_atual]; /* erro */
+    struct heroi heroi = mundo->herois[IDHeroi];
+    struct base base = mundo->bases[heroi.base_atual]; /* erro */
     int IDBaseDestino = aleat(0, mundo->n_bases - 1);
-    struct base *base_destino = &mundo->bases[IDBaseDestino]; /* erro */
+    struct base base_destino = mundo->bases[IDBaseDestino];
 
     int dist = 0;
     int duracao = 0;
-    int velocidade = heroi->velocidade;
+    int velocidade = heroi.velocidade;
 
     duracao = dist / velocidade;
 
-    if (base_atual->ID_base == base_destino->ID_base)
+    if (IDBaseDestino == base.ID_base)
     {
         duracao = 0;
     }
     else
     {
-        dist = distancia(base_atual->localX, base_atual->localY, base_destino->localX, base_destino->localY);
+        dist = distancia(base.localX, base.localY, base_destino.localX, base_destino.localY);
         duracao = dist / velocidade;
     }
 
@@ -540,14 +544,12 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
 
     /* erro */
     printf("%6d: VIAJA  HEROI %2d BASE %d BASE %d DIST %d VEL %d CHEGA %d\n",
-           mundo->tempo_atual, IDHeroi, base_atual->ID_base, base_destino->ID_base,
-           dist, velocidade, tempo_chega);
+           mundo->tempo_atual, IDHeroi, base.ID_base, base_destino.ID_base, dist, velocidade, tempo_chega);
 
     if (!chega)
         exit(EXIT_FAILURE);
 
     insere_lef(lista_de_eventos, chega);
-    heroi->base_atual = base_destino->ID_base;
 }
 /*
 %6d: MISSAO %d TENT %d HAB REQ: [ %d %d ... ]
@@ -558,17 +560,12 @@ void evento_viaja(int IDHeroi, struct mundo *mundo, struct lef_t *lista_de_event
  ou
 %6d: MISSAO %d IMPOSSIVEL
 */
-void evento_missao(int IDMissao, struct mundo *mundo)
+void evento_missao(int IDMissao, struct mundo *mundo, struct missao *missao)
 {
     int i;
-    int tentativas_por_missao = 0;
-    for (i = 0; i < mundo->n_herois; i++)
-    {
-        if (contido_cjt(mundo->missoes[IDMissao].habilidades, mundo->herois[i].habilidades_heroi))
-            tentativas_por_missao++;
-    }
+    mundo->missoes[IDMissao].tentativas++;
 
-    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, tentativas_por_missao);
+    printf("%6d: MISSAO %d TENT %d HAB REQ: ", mundo->tempo_atual, IDMissao, mundo->missoes[IDMissao].tentativas);
     imprime_cjt(mundo->missoes[IDMissao].habilidades);
 
     struct base base_encontrada;
@@ -602,9 +599,8 @@ void evento_missao(int IDMissao, struct mundo *mundo)
     for (i = 0; i < cardinalidade_cjt(equipe); i++)
     {
         incrementa_iterador_cjt(equipe, &IDHeroi);
-        printf("%6d: MISSAO %d HAB HEROI %2d: [ ", mundo->tempo_atual, IDMissao, IDHeroi);
+        printf("%6d: MISSAO %d HAB HEROI %2d: ", mundo->tempo_atual, IDMissao, IDHeroi);
         imprime_cjt(mundo->herois[IDHeroi].habilidades_heroi);
-        printf("]\n");
     }
 
     struct conjunto *uniao = cria_cjt(mundo->n_habilidades);
@@ -615,12 +611,12 @@ void evento_missao(int IDMissao, struct mundo *mundo)
         uniao = uniao_cjt(uniao, mundo->herois[IDHeroi].habilidades_heroi);
     }
 
-    printf("%6d: MISSAO %d UNIAO HAB BASE %d: [ ", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
+    printf("%6d: MISSAO %d UNIAO HAB BASE %d: ", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
     imprime_cjt(uniao);
-    printf("]\n");
 
     if (contido_cjt(mundo->missoes[IDMissao].habilidades, uniao))
     {
+        mundo->missoes[IDMissao].cumprida = true;
         printf("%6d: MISSAO %d CUMPRIDA BASE %d\n", mundo->tempo_atual, IDMissao, base_encontrada.ID_base);
         destroi_cjt(mundo->missoes[IDMissao].habilidades);
         mundo->missoes[IDMissao].habilidades = uniao;
@@ -646,25 +642,29 @@ void evento_fim(struct mundo *mundo, struct lef_t **lista_de_eventos)
     /* informaçõe sobre herois */
     for (i = 0; i < mundo->n_herois; i++)
     {
-        printf("HEROI %2d PAC %2d VEL %d EXP %d HABS [ ", i, mundo->herois[i].paciencia,
+        printf("HEROI %2d PAC %2d VEL %d EXP %d HABS ", i, mundo->herois[i].paciencia,
                mundo->herois[i].velocidade, mundo->herois[i].experiencia);
         imprime_cjt(mundo->herois[i].habilidades_heroi);
-        printf(" ]\n");
     }
 
     /* informacoes sobre missoes */
     int missao_cumprida = 0;
-    for (i = 0; i < mundo->n_missoes; i++) /* verifica se a missao foi cumprida */
+    int min_tentativas = 987654321;
+    int max_tentativas = 0;
+    int total_tentativas = 0;
+
+    for (i = 0; i < mundo->n_missoes; i++) {
         if (contido_cjt(mundo->missoes[i].habilidades, mundo->missoes[i].habilidades))
             missao_cumprida++;
+        if (mundo->missoes[i].tentativas < min_tentativas)
+            min_tentativas = mundo->missoes[i].tentativas;
+        if (mundo->missoes[i].tentativas > max_tentativas)
+            max_tentativas = mundo->missoes[i].tentativas;
+        total_tentativas += mundo->missoes[i].tentativas;
+    }
 
     printf("MISSOES CUMPRIDAS: %d/%d (%.2f%%)\n", missao_cumprida, mundo->n_missoes, (float)missao_cumprida / mundo->n_missoes * 100);
-
-    int tentativas_por_missao = 0;
-    for (i = 0; i < mundo->n_missoes; i++) /* verifica o numero de tentativas por missao */
-                                           /*code here*/
-
-        printf("TENTATIVAS/MISSAO: MIN %d, MAX %d, MEDIA %.2f\n", 0, 0, (float)tentativas_por_missao / mundo->n_missoes);
+    printf("TENTATIVAS/MISSAO: MIN %d MAX %d MEDIA %.2f\n", min_tentativas, max_tentativas, (float)total_tentativas / mundo->n_missoes);
 
     destroi_lef(*lista_de_eventos);
     *lista_de_eventos = NULL;
@@ -687,7 +687,7 @@ int main()
 
     evento_viaja(15, mundo, lista_de_eventos);
 
-    /* ciclo da simulação
+    /* ciclo da simulação */
     while (lista_de_eventos)
     {
         struct evento_t *evento;
@@ -709,7 +709,7 @@ int main()
             evento_sai(evento->dado1, evento->dado2, mundo, lista_de_eventos);
             break;
         case AVISA:
-            evento_avisa(evento->dado1, mundo, lista_de_eventos);
+            evento_avisa(IDBase, mundo, lista_de_eventos);
             break;
         case ENTRA:
             evento_entra(evento->dado1, evento->dado2, mundo, lista_de_eventos);
@@ -725,7 +725,7 @@ int main()
             break;
         }
         destroi_evento(evento);
-    }*/
+    }
 
     destroi_lef(lista_de_eventos); /* destroi a lista de eventos */
     int i;
