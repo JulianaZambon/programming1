@@ -302,10 +302,9 @@ void inicializa_eventos_iniciais(struct mundo *mundo, struct lef_t *lista_de_eve
 /* EVENTOS ---------------------------------------------------------------------- */
 
 /*Representa um herói H chegando em uma base B no instante T.
-Ao chegar, o herói analisa o tamanho da fila e decide se espera para entrar ou desiste*/
-/* CHEGA (T, H, B):
-atualiza base de H
+Ao chegar, o herói analisa o tamanho da fila e decide se espera para entrar ou desiste
 
+atualiza base de H
 se há vagas em B e a fila de espera em B está vazia:
     espera = true
 senão:
@@ -315,9 +314,6 @@ se espera:
     cria e insere na LEF o evento ESPERA (agora, H, B)
 senão:
     cria e insere na LEF o evento DESISTE (agora, H, B)
-
-%6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) ESPERA
-%6d: CHEGA  HEROI %2d BASE %d (%2d/%2d) DESISTE
 */
 void evento_chega(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
@@ -384,7 +380,7 @@ void evento_espera(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *l
 
 /*
 O herói H desiste de entrar na base B, escolhe uma base aleatória D e viaja para lá:
-DESISTE (T, H, B):
+
 escolhe uma base destino D aleatória
 cria e insere na LEF o evento VIAJA (agora, H, D)
 */
@@ -406,8 +402,6 @@ void evento_desiste(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *
 
 /*
 O herói H sai da base B. Ao sair, escolhe uma base de destino para viajar; o porteiro de B é avisado, pois uma vaga foi liberada:
-
-SAI (T, H, B):
 
 retira H do conjunto de heróis presentes em B
 escolhe uma base destino D aleatória
@@ -445,15 +439,11 @@ void evento_sai(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *list
 
 /*
 O porteiro da base B trata a fila de espera:
-AVISA (T, B):
 
 enquanto houver vaga em B e houver heróis esperando na fila:
     retira primeiro herói (H') da fila de B
     adiciona H' ao conjunto de heróis presentes em B
     cria e insere na LEF o evento ENTRA (agora, H', B)
-
-%6d: AVISA  PORTEIRO BASE %d (%2d/%2d) FILA [ %2d %2d ... ]
-%6d: AVISA  PORTEIRO BASE %d ADMITE %2d
 */
 void evento_avisa(int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
@@ -483,14 +473,9 @@ void evento_avisa(int IDBase, struct mundo *mundo, struct lef_t *lista_de_evento
 /*
 O herói H entra na base B. Ao entrar, o herói decide quanto tempo vai ficar e agenda sua saída da base:
 
-ENTRA (T, H, B):
-
 calcula TPB = tempo de permanência na base:
     TPB = 15 + paciência de H * aleatório [1...20]
 cria e insere na LEF o evento SAI (agora + TPB, H, B)
-
-saída:
-%6d: ENTRA  HEROI %2d BASE %d (%2d/%2d) SAI %d
 */
 void evento_entra(int IDHeroi, int IDBase, struct mundo *mundo, struct lef_t *lista_de_eventos)
 {
@@ -692,7 +677,7 @@ int main()
 
     inicializa_eventos_iniciais(mundo, lista_de_eventos); /* inicializa os eventos iniciais */
 
-    mundo->tempo_atual = T_INICIO; /* tempo atual do mundo */
+    mundo->tempo_atual = T_INICIO; 
 
     /* ciclo da simulação 
     while (lista_de_eventos)
