@@ -1,37 +1,39 @@
-# Makefile de exemplo (Manual do GNU Make)
-     
-CFLAGS = -Wall -Werror -Wextra -std=c90 -g  # flags de compilacao
+# Flags de compilação
+CFLAGS = -Wall -Werror -Wextra -std=c90 -g
 LDFLAGS = -lm
-ENTREGA = theboys-entrega
+ENTREGA = lbp-entrega
 
+# Compilador
 CC = gcc
 
-# arquivos-objeto
-	objects = theboys.o lef.o fila.o 
-     
-all: theboys
+# Arquivos-objeto
+objects = lbp.o lib.o
 
-theboys: theboys.o conjunto.o lef.o fila.o
-	$(CC) -o theboys theboys.o conjunto.o lef.o fila.o $(LDFLAGS)
+# Alvo principal
+all: LBP
 
-lef.o: lef.c
-	$(CC) -c $(CFLAGS) lef.c
+# Regra para gerar o executável LBP
+LBP: $(objects)
+	$(CC) -o LBP $(objects) $(LDFLAGS)
 
-fila.o: fila.c
-	$(CC) -c $(CFLAGS) fila.c
+# Regras para compilar cada arquivo objeto
+lbp.o: lbp.c lib.h
+	$(CC) -c $(CFLAGS) lbp.c
 
-theboys.o: theboys.c
-	$(CC) -c $(CFLAGS) theboys.c
+lib.o: lib.c lib.h
+	$(CC) -c $(CFLAGS) lib.c
 
-# arquivo TGZ para entregar
+# Regra para gerar o arquivo TGZ para entrega
 entrega: clean
 	mkdir $(ENTREGA)
-	cp *.c *.h makefile $(ENTREGA)
+	cp *.c *.h Makefile $(ENTREGA)
 	chmod 600 $(ENTREGA)/*
 	tar czvf $(ENTREGA).tgz $(ENTREGA)
 	rm -rf $(ENTREGA)
 	@echo "Arquivo $(ENTREGA).tgz criado para entrega"
 
+# Regra de limpeza
 clean:
-	rm -f $(objects) theboys
+	rm -f $(objects) LBP
+
 
